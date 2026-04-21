@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import "./Notes.css";
 
 export default function NotesPage() {
   const [state, setState] = useState(() => {
@@ -60,28 +62,32 @@ export default function NotesPage() {
   return (
     <div className="flex h-screen bg-[#080808] text-white" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
       {/* Sidebar */}
-      <aside className="w-[110px] bg-[#050505] border-r border-white/5 flex flex-col pt-[30px] z-20">
-        <a href="/index.html" className="home-icon ml-[20px] mb-[40px] opacity-40 text-[#b3a577]">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      {/* Sidebar */}
+      {/* Sidebar */}
+      <aside className="w-[110px] bg-[#050505] border-r border-white/5 flex flex-col pt-[40px] pb-[20px] z-20 sidebar-container">
+        <Link to="/" className="home-icon-wrapper">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="nav-home-svg">
             <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
           </svg>
-        </a>
+        </Link>
 
-        {state.folders.map((f) => (
-          <div
-            key={f}
-            onClick={() => setState((prev) => ({ ...prev, activeFolder: f }))}
-            className={`w-full px-[20px] py-[18px] flex items-center text-[9px] uppercase tracking-[1.5px] cursor-pointer relative transition-all duration-300 ${state.activeFolder === f
-              ? "text-[#b3a577] font-extrabold bg-[rgba(179,165,119,0.03)]"
-              : "text-[#333]"
-              }`}
-          >
-            {state.activeFolder === f && (
-              <span className="absolute left-0 w-[2px] h-full bg-[#b3a577] shadow-[0_0_10px_#b3a577]" />
-            )}
-            {f}
-          </div>
-        ))}
+        <div className="flex-1 flex flex-col">
+          {state.folders.map((f) => (
+            <div
+              key={f}
+              onClick={() => setState((prev) => ({ ...prev, activeFolder: f }))}
+              className={`folder-item ${state.activeFolder === f ? "active" : ""}`}
+            >
+              {state.activeFolder === f && <span className="active-indicator" />}
+              <span className="folder-label">{f}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Optional: System status at bottom for detail */}
+        <div className="px-5 opacity-10 text-[7px] uppercase tracking-[2px] mt-auto">
+          v.4.0
+        </div>
       </aside>
 
       {/* Main */}

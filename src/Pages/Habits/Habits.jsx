@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 
 export default function HabitEngine() {
   const getWeekNumber = (d) => {
@@ -111,12 +112,12 @@ export default function HabitEngine() {
     >
       {/* Header */}
       <header className="mb-10">
-        <a
-          href="/index.html"
+        <Link
+          to="/"
           className="text-[9px] text-[#b3a577] tracking-[0.4em] uppercase mb-10 block opacity-40 hover:opacity-100"
         >
           {"<< Return_to_Core"}
-        </a>
+        </Link>
 
         <h1 className="text-lg font-black tracking-tighter uppercase opacity-30">
           Habit_Engine // Cycle_v5

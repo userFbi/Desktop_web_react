@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Trash2, Copy, Eye } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export default function KeyVault() {
     const defaultVault = [
@@ -66,9 +67,9 @@ export default function KeyVault() {
             {/* Header */}
             <header className="flex justify-between items-end border-b border-[#151515] pb-8">
                 <div>
-                    <a href="/index.html" className="text-[9px] text-[#b3a577] tracking-[0.4em] uppercase hover:tracking-[0.6em] transition-all duration-500 block mb-3">
+                    <Link to="/" className="text-[9px] text-[#b3a577] tracking-[0.4em] uppercase transition-all duration-500 block mb-3">
                         {'<< Return_to_Core'}
-                    </a>
+                    </Link>
 
                     <h1 className="text-4xl font-extrabold italic tracking-tighter uppercase leading-none">
                         Key<span className="text-[#b3a577]">Vault</span> <span className="text-[#151515]">//</span>

@@ -1,0 +1,152 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@100;400;900&family=JetBrains+Mono:wght@300&display=swap");
+
+.timer-glow {
+    text-shadow: 0 0 80px rgba(179, 165, 119, 0.15);
+}
+
+.branding-header .reveal-content {
+    opacity: 0;
+    transform: translateX(-15px);
+    transition: all 0.8s cubic-bezier(0.19, 1, 0.22, 1);
+    pointer-events: none;
+}
+
+.branding-header:hover .reveal-content {
+    opacity: 1;
+    transform: translateX(0);
+    pointer-events: auto;
+}
+
+/* Zen Mode Logic handled via React state classes */
+
+
+aside {
+    width: 400px;
+    background: #111;
+    border-left: 1px solid rgba(255, 255, 255, 0.05);
+    display: flex;
+    flex-direction: column;
+    padding: 2.5rem;
+    /* 40px */
+    height: 100%;
+    opacity: 1;
+    transform: translateX(0);
+
+    /* CRITICAL: This ensures the 'return' animation is smooth */
+    transition:
+        width 0.8s cubic-bezier(0.19, 1, 0.22, 1),
+        padding 0.8s cubic-bezier(0.19, 1, 0.22, 1),
+        opacity 0.6s ease,
+        transform 0.8s cubic-bezier(0.19, 1, 0.22, 1),
+        border-color 0.5s ease;
+}
+
+.zen-mode aside {
+    width: 0 !important;
+    padding: 0 !important;
+    opacity: 0 !important;
+    transform: translateX(50px);
+    /* Slide out to the right */
+    border-left-color: transparent !important;
+    pointer-events: none;
+    overflow: hidden;
+    /* Prevents content from jumping during the shrink */
+}
+
+/* --- Optimized Zen Mode Logic --- */
+
+.zen-mode aside,
+.zen-mode .branding-header,
+.zen-mode .dock-links {
+    width: 0 !important;
+    padding: 0 !important;
+    opacity: 0 !important;
+    margin: 0 !important;
+    /* Added to ensure total collapse */
+    overflow: hidden;
+    border: none !important;
+    pointer-events: none;
+    /* Maintain the high-fidelity timing for all elements */
+    transition: all 0.8s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+.zen-mode aside {
+    transform: translateX(50px);
+}
+
+.zen-mode main {
+    background: #000 !important;
+    transition: background 0.8s cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+.zen-mode #timer-display {
+    color: #fff !important;
+    transform: scale(1.1);
+    transition: transform 0.8s cubic-bezier(0.19, 1, 0.22, 1), color 0.5s ease;
+}
+
+/* Dashboard.css */
+
+.nav-link {
+    font-size: 10px;
+    font-family: "JetBrains Mono", monospace;
+    letter-spacing: 0.2em;
+    /* CHANGE THIS LINE */
+    color: rgba(255, 255, 255, 0.8);
+    /* Brighter base color (80% opacity) */
+    text-transform: uppercase;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+/* Keep the hover state as is for that premium feel */
+.nav-link:hover {
+    color: #c7a837;
+    /* Accent color on hover */
+
+    text-shadow: 0 0 10px rgba(179, 165, 119, 0.3);
+}
+
+.input-clean {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    outline: none;
+    transition: 0.3s;
+}
+
+.input-clean:focus {
+    border-bottom-color: #b3a577;
+}
+
+.custom-scroll::-webkit-scrollbar {
+    width: 2px;
+}
+
+.custom-scroll::-webkit-scrollbar-thumb {
+    background: #b3a577;
+}
+
+.dock-item {
+    transition: 0.3s;
+    color: rgba(255, 255, 255, 0.4);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    text-decoration: none;
+}
+
+.dock-item:hover {
+    color: #b3a577;
+    letter-spacing: 0.4em;
+}
+
+button.sync-btn {
+    transition: all 0.3s ease;
+}
+
+button.sync-btn:active {
+    transform: scale(0.9);
+    color: #fff;
+}

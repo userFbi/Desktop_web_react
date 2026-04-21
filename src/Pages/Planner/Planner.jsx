@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { ArrowLeft } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export default function TacticalPlanner() {
   const hours = Array.from({ length: 25 }, (_, i) =>
@@ -63,12 +64,12 @@ export default function TacticalPlanner() {
     >
       {/* Navbar */}
       <nav className="flex justify-between items-center mb-12">
-        <a
-          href="/index.html"
+        <Link
+          to="/"
           className="text-[10px] font-bold text-zinc-500 hover:text-white uppercase tracking-widest flex items-center gap-2"
         >
           <ArrowLeft className="w-3 h-3" /> Dashboard
-        </a>
+        </Link>
 
         <button
           onClick={clearPlanner}
