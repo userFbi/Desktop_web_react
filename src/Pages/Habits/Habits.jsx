@@ -148,7 +148,7 @@ export default function HabitEngine() {
         {["Protocol", "M", "T", "W", "T", "F", "S", "S"].map((h, i) => (
           <div
             key={i}
-            className="border-r border-b border-[#151515] flex items-center justify-center text-[10px] font-bold bg-[#050505] text-[#333] h-[40px]"
+            className="border-r border-b border-[#151515] flex items-center justify-center text-[10px] font-bold bg-[#050505] text-[#888] h-[40px]"
           >
             {h}
           </div>
@@ -157,11 +157,11 @@ export default function HabitEngine() {
         {/* Data */}
         {state.habits.map(habit => (
           <React.Fragment key={habit.id}>
-            <div className="border-r border-b border-[#151515] flex justify-between items-center px-4 text-[9px] text-[#666] bg-[#0a0a0a]">
+            <div className="border-r border-b border-[#151515] flex justify-between items-center px-4 text-[9px] text-white-200 bg-[#0a0a0a]">
               <span>{habit.name}</span>
               <span
                 onClick={() => deleteHabit(habit.id)}
-                className="cursor-pointer opacity-30 hover:text-red-900"
+                className="cursor-pointer opacity-50 hover:text-red-900"
               >
                 ×
               </span>
@@ -224,7 +224,7 @@ export default function HabitEngine() {
       <div className="mt-12">
         <button
           onClick={clearAll}
-          className="text-[8px] text-zinc-900 hover:text-red-900 uppercase tracking-widest"
+          className="text-[8px] text-white hover:text-red-900 uppercase tracking-widest"
         >
           [ Hard_Reset_Database ]
         </button>

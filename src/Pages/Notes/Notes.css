@@ -1,91 +1,28 @@
-/* Sidebar Container */
-.sidebar-container {
-    transition: all 0.4s ease;
-}
-
-/* Home Icon Styling */
-.home-icon-wrapper {
-    margin-left: auto;
-    margin-right: auto;
-    margin-bottom: 50px;
-    color: #c7a837;
-    /* Brighter accent */
-    opacity: 0.3;
-    transition: all 0.3s ease;
-}
-
-.home-icon-wrapper:hover {
-    opacity: 1;
-    transform: translateY(-2px);
-    filter: drop-shadow(0 0 8px rgba(212, 196, 143, 0.4));
-}
-
-/* Folder Items */
-.folder-item {
-    width: 100%;
-    padding: 25px 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    position: relative;
-    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-}
-
-.folder-label {
-    font-size: 9px;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    color: #333;
-    /* Muted base color */
-    transition: all 0.3s ease;
-}
-
-/* Hover State */
-.folder-item:hover .folder-label {
-    color: #666;
-    letter-spacing: 3px;
-}
-
-/* Active State */
-.folder-item.active {
-    background: linear-gradient(90deg, rgba(212, 196, 143, 0.04) 0%, transparent 100%);
-}
-
-.folder-item.active .folder-label {
-    color: #dab223;
-    /* Brighter gold */
-    font-weight: 900;
-    letter-spacing: 2.5px;
-    filter: drop-shadow(0 0 5px rgba(212, 196, 143, 0.2));
-}
-
-
-
-@keyframes indicator-grow {
-    from {
-        transform: scaleY(0);
-    }
-
-    to {
-        transform: scaleY(1);
-    }
-}
-
-/* Custom Scrollbar for the Notes List (bonus refinement) */
-.overflow-y-auto::-webkit-scrollbar {
+/* Custom Scrollbar for that FocusOS feel */
+.custom-scroll::-webkit-scrollbar {
     width: 3px;
 }
 
-.overflow-y-auto::-webkit-scrollbar-track {
+.custom-scroll::-webkit-scrollbar-track {
     background: transparent;
 }
 
-.overflow-y-auto::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 10px;
+.custom-scroll::-webkit-scrollbar-thumb {
+    background: rgba(179, 165, 119, 0.2);
 }
 
-.overflow-y-auto::-webkit-scrollbar-thumb:hover {
-    background: rgba(212, 196, 143, 0.2);
+/* Fix for iOS momentum scrolling */
+.overflow-y-auto {
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Prevent textareas from acting weird on focus */
+textarea:focus,
+input:focus {
+    outline: none;
+}
+
+/* Sidebar Hover / Active Animations */
+.group:hover span {
+    letter-spacing: 3px;
 }

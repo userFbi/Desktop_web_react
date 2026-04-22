@@ -1,0 +1,41 @@
+/* Fix for long text breaking the vault cards */
+.break-all {
+    word-break: break-all;
+}
+
+.truncate {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Ensure disc security works across all browsers */
+span[style*="disc"] {
+    font-family: 'Inter', sans-serif !important;
+    /* Discs look better in sans-serif */
+    letter-spacing: 4px;
+}
+
+/* Smooth scaling for the grid */
+.vault-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+/* Mobile specific touch area improvements */
+@media (max-width: 640px) {
+    header h1 {
+        text-align: center;
+        width: 100%;
+    }
+
+    header .text-\[9px\] {
+        text-align: center;
+    }
+
+    button {
+        min-height: 44px;
+        /* Better for thumbs */
+    }
+}
