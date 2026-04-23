@@ -42,15 +42,16 @@ aside {
 }
 
 .zen-mode aside {
+    display: flex !important;
+    /* Keep it in the DOM */
     width: 0 !important;
     padding: 0 !important;
+    margin: 0 !important;
     opacity: 0 !important;
-    transform: translateX(50px);
-    /* Slide out to the right */
-    border-left-color: transparent !important;
-    pointer-events: none;
+    transform: translateX(100px);
     overflow: hidden;
-    /* Prevents content from jumping during the shrink */
+    pointer-events: none;
+    border: none !important;
 }
 
 /* --- Optimized Zen Mode Logic --- */
@@ -308,4 +309,16 @@ button,
     aside .text-right {
         text-align: left !important;
     }
+}
+
+/* Prevent task text from stretching on hover */
+.space-y-0 div span,
+.space-y-0 div {
+    letter-spacing: normal !important;
+    transition: letter-spacing 0s !important;
+}
+
+/* Ensure the Today-Task header stays tight */
+p.text-zinc-600.uppercase.tracking-\[0\.3em\] {
+    letter-spacing: 0.3em !important;
 }
