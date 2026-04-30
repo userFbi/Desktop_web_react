@@ -14,20 +14,48 @@ export default function TacticalPlanner() {
   const currentHour = new Date().getHours();
 
   useEffect(() => {
-    const stored = {};
-    allHours.forEach((h) => {
-      const hInt = parseInt(h);
-      days.forEach((d) => {
-        const id = `tp-${d}-${hInt}`;
-        const val = localStorage.getItem(id);
-        if (val) stored[id] = val;
-      });
-    });
-    setData(stored);
+    fetch("http://localhost:5000/planner")
+      .then(res => res.json())
+      .then(data => {
+        console.log("API DATA:", data); // 🔍 debug
+
+        const formatted = {};
+
+        // ✅ handle both cases (array OR object)
+        const plannerArray = Array.isArray(data) ? data : data.data;
+
+        if (plannerArray) {
+          plannerArray.forEach(item => {
+            const id = `tp-${item.day}-${item.hour}`;
+            formatted[id] = item.value;
+          });
+        }
+
+        setData(formatted);
+      })
+      .catch(err => console.error(err));
   }, []);
 
   const updateCell = (id, value) => {
-    localStorage.setItem(id, value);
+    const [_, day, hour] = id.split("-");
+
+    if (!value || value.trim() === "") {
+      return;
+    }
+
+    fetch("http://localhost:5000/planner/add", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        // userID: "test-user",
+        day,
+        hour: parseInt(hour),
+        value
+      }),
+    });
+
     setData((prev) => ({ ...prev, [id]: value }));
   };
 
@@ -58,7 +86,21 @@ export default function TacticalPlanner() {
           </button>
 
           <button
-            onClick={() => { if (window.confirm("Confirm System Wipe?")) { localStorage.clear(); window.location.reload(); } }}
+            onClick={async () => {
+              if (window.confirm("Confirm System Wipe?")) {
+                try {
+                  await fetch("http://localhost:5000/planner/delete", {
+                    method: "DELETE"
+                  });
+
+                  localStorage.clear(); // optional
+                  window.location.reload();
+
+                } catch (err) {
+                  console.log("Wipe failed:", err);
+                }
+              }
+            }}
             className="text-[12px] font-black text-red-900 hover:text-red-500 hover:bg-red-500/10 px-4 py-2 rounded-md transition-all uppercase tracking-tighter"
           >
             Wipe_Database
@@ -94,7 +136,11 @@ export default function TacticalPlanner() {
                     <div key={id} className={`h-12 md:h-14 border-b border-r border-white/5 relative group ${isCurrent ? 'bg-[#b3a577]/5' : ''}`}>
                       <textarea
                         value={data[id] || ""}
-                        onChange={(e) => updateCell(id, e.target.value)}
+                        onChange={(e) => setData(prev => ({
+                          ...prev,
+                          [id]: e.target.value
+                        }))}
+                        onBlur={(e) => updateCell(id, e.target.value)}
                         placeholder="--"
                         className="w-full h-full bg-transparent p-2 text-[10px] text-zinc-400 focus:text-white focus:bg-white/[0.02] outline-none resize-none transition-all leading-tight scrollbar-hide"
                       />
@@ -106,7 +152,8 @@ export default function TacticalPlanner() {
           })}
         </div>
       </div>
-      <p className="mt-4 text-[8px] text-zinc-800 uppercase tracking-[0.5em] text-center">Tactical_Grid_v4.2 // Surat_Node</p>
+      <p className="mt-4 text-[8px] text-zinc-800 uppercase tracking-[0.5em] text-center">Tactical
+        Grid_v4.2 // Surat_Node</p>
     </div>
   );
 }

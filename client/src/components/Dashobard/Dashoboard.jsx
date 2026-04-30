@@ -61,23 +61,30 @@ const Dashboard = () => {
     syncTasks();
   }, []);
 
-  const syncTasks = (forceReload = false) => {
-    const days = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
-    const today = days[new Date().getDay()];
-    const hours = [8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21];
+  const syncTasks = async () => {
+    try {
+      const res = await fetch("http://localhost:5000/planner");
+      const result = await res.json();
 
-    if (forceReload) localStorage.removeItem("tp_deleted_today");
-    const deletedToday = JSON.parse(localStorage.getItem("tp_deleted_today") || "[]");
+      const arr = result.data || result;
 
-    const synced = hours.reduce((acc, h) => {
-      const key = `tp-${today}-${h}`;
-      const task = localStorage.getItem(key);
-      if (task && task.trim() !== "" && !deletedToday.includes(key)) {
-        acc.push({ key, time: `${h}:00`, text: task, type: 'synced' });
-      }
-      return acc;
-    }, []);
-    setTasks(synced);
+      const days = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+      const today = days[new Date().getDay()];
+
+      const filtered = arr
+        .filter(item => item.day === today && item.value && item.value.trim() !== "")
+        .map(item => ({
+          key: `tp-${item.day}-${item.hour}`,
+          time: `${item.hour}:00`,
+          text: item.value,
+          type: "synced"
+        }));
+
+      setTasks(filtered);
+
+    } catch (err) {
+      console.log("Dashboard fetch error:", err);
+    }
   };
 
   // 4. Timer Logic
