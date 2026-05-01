@@ -155,7 +155,7 @@ const Dashboard = () => {
         {/* Header */}
         <div className="branding-header flex items-center gap-6 opacity-80 relative z-[100] w-fit cursor-pointer">
           <div id="logo" className="text-xl font-black italic tracking-tighter uppercase select-none transition-transform duration-700 text-white">
-            Tp
+            tp
           </div>
           <div className="reveal-content flex items-center gap-6">
             <div className="h-6 w-[2px] bg-white/50"></div>
@@ -216,7 +216,7 @@ const Dashboard = () => {
       <aside className="w-[400px] bg-[#111] border-l border-white/5 flex flex-col p-10 h-full">
         <div className="flex justify-between items-start mb-16">
           <div>
-            <p className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">Environmental_Data</p>
+            <p className="text-[10px] text-zinc-600 uppercase tracking-widest mb-1">environment </p>
             <div className="flex items-baseline gap-2">
               <p className="text-2xl font-light text-white">{weather.temp}°C</p>
               <p className="text-[10px] text-[#b3a577] font-mono uppercase tracking-tighter">{weather.desc}</p>
@@ -275,11 +275,7 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <div className="mt-8 flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-            <span className="text-[9px] font-mono text-zinc-500 uppercase">Link_Secure</span>
-          </div>
+        <div className="mt-8 flex justify-end items-center">
           <Link to="/planner" className="text-[9px] font-bold text-[#b3a577]  transition-all uppercase">Open_Planner</Link>
         </div>
       </aside>

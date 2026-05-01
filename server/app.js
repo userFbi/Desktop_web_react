@@ -15,7 +15,13 @@ app.use(express.json());
 
 // Routes
 const plannerRouter = require('./routes/planner');
+const vaultRoutes = require("./routes/vault");
+const expenseRoutes = require("./routes/expense");
+
+
 app.use("/planner", plannerRouter);
+app.use("/vault", vaultRoutes);
+app.use("/expense", expenseRoutes);
 
 // Test route
 app.get("/", (req, res) => {

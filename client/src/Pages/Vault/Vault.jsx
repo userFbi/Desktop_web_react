@@ -21,7 +21,7 @@ export default function KeyVault() {
 
     const fetchVault = async () => {
         try {
-            const res = await fetch("http://localhost:5000/api/vault");
+            const res = await fetch("http://localhost:5000/vault");
             const data = await res.json();
             setVaultData(data);
         } catch (err) {
@@ -31,8 +31,8 @@ export default function KeyVault() {
 
 
     const filtered = vaultData.filter(item =>
-        item.service.toLowerCase().includes(search.toLowerCase()) ||
-        item.identity.toLowerCase().includes(search.toLowerCase())
+        item.serviceName.toLowerCase().includes(search.toLowerCase()) ||
+        item.username.toLowerCase().includes(search.toLowerCase())
     );
 
     const notify = (msg) => {
@@ -47,12 +47,16 @@ export default function KeyVault() {
 
         if (service && identity && key) {
             try {
-                await fetch("http://localhost:5000/api/vault/add", {
+                await fetch("http://localhost:5000/vault/add", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
                     },
-                    body: JSON.stringify({ service, identity, key }),
+                    body: JSON.stringify({
+                        serviceName: service,
+                        username: identity,
+                        password: key
+                    }),
                 });
 
                 fetchVault(); // refresh
@@ -68,10 +72,9 @@ export default function KeyVault() {
         if (!window.confirm("Confirm Deletion?")) return;
 
         try {
-            await fetch(`http://localhost:5000/api/vault/${id}`, {
+            await fetch(`http://localhost:5000/vault/delete/${id}`, {
                 method: "DELETE",
             });
-
             fetchVault();
             notify("ENTRY_REMOVED");
 
@@ -132,7 +135,7 @@ export default function KeyVault() {
                             <div>
                                 <p className="text-[8px] text-zinc-600 uppercase tracking-widest">Service_Provider</p>
                                 <h2 className="text-lg font-bold italic tracking-tighter hover:text-[#b3a577] break-all pr-4">
-                                    {item.service}
+                                    {item.serviceName}
                                 </h2>
                             </div>
                             <button onClick={() => deleteKey(item._id)} className="text-zinc-800 hover:text-red-500 flex-shrink-0">
@@ -144,8 +147,8 @@ export default function KeyVault() {
                             <div>
                                 <p className="text-[8px] text-zinc-600 uppercase mb-1">Identity</p>
                                 <div className="flex justify-between items-center bg-[#050505] p-3 border border-white/5">
-                                    <span className="text-xs text-zinc-400 truncate pr-2">{item.identity}</span>
-                                    <button onClick={() => copy(item.identity)} className="opacity-40 hover:opacity-100 hover:text-[#b3a577] flex-shrink-0">
+                                    <span className="text-xs text-zinc-400 truncate pr-2">{item.username}</span>
+                                    <button onClick={() => copy(item.username)} className="opacity-40 hover:opacity-100 hover:text-[#b3a577] flex-shrink-0">
                                         <Copy className="w-3.5 h-3.5" />
                                     </button>
                                 </div>
@@ -158,13 +161,13 @@ export default function KeyVault() {
                                         className="text-xs tracking-widest truncate pr-2"
                                         style={{ WebkitTextSecurity: visiblePass[item._id] ? 'none' : 'disc' }}
                                     >
-                                        {item.key}
+                                        {item.password}
                                     </span>
                                     <div className="flex gap-3 flex-shrink-0">
                                         <button onClick={() => togglePass(item._id)} className="opacity-40 hover:opacity-100 hover:text-[#b3a577]">
                                             <Eye className="w-3.5 h-3.5" />
                                         </button>
-                                        <button onClick={() => copy(item.key)} className="opacity-40 hover:opacity-100 hover:text-[#b3a577]">
+                                        <button onClick={() => copy(item.password)} className="opacity-40 hover:opacity-100 hover:text-[#b3a577]">
                                             <Copy className="w-3.5 h-3.5" />
                                         </button>
                                     </div>
@@ -175,7 +178,7 @@ export default function KeyVault() {
                         <div className="mt-6 pt-4 border-t border-white/5 flex justify-between">
                             <span className="text-[8px] text-zinc-700 uppercase">Status_Check</span>
                             <span className="text-[8px] px-2 py-0.5 bg-green-900/20 text-green-500 rounded-full font-bold uppercase">
-                                {item.type}
+                                {item.type || "SECURE"}
                             </span>
                         </div>
                     </div>
