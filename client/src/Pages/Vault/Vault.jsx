@@ -4,10 +4,16 @@ import { Link } from "react-router-dom";
 import "./Vault.css";
 
 export default function KeyVault() {
-    const defaultVault = [
-        { id: 1, service: "GitHub_Personal", identity: "dev_surat_2026", key: "ghp_secure_token_99", type: "SECURE" },
-        { id: 2, service: "Google_Main", identity: "admin@focusos.net", key: "P@ssw0rdFocus1", type: "SECURE" }
-    ];
+    const [showModal, setShowModal] = useState(false);
+    const [form, setForm] = useState({
+        serviceName: "",
+        username: "",
+        password: ""
+    });
+
+    const [deleteId, setDeleteId] = useState(null);
+
+
 
     const [vaultData, setVaultData] = useState([]);
 
@@ -41,40 +47,35 @@ export default function KeyVault() {
     };
 
     const addNewKey = async () => {
-        const service = prompt("Enter Service Name:");
-        const identity = prompt("Enter Username/Email:");
-        const key = prompt("Enter Password:");
+        const { serviceName, username, password } = form;
 
-        if (service && identity && key) {
-            try {
-                await fetch("http://localhost:5000/vault/add", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({
-                        serviceName: service,
-                        username: identity,
-                        password: key
-                    }),
-                });
+        if (!serviceName || !username || !password) return;
 
-                fetchVault(); // refresh
-                notify("ENTRY_ADDED");
+        try {
+            await fetch("http://localhost:5000/vault/add", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(form),
+            });
 
-            } catch (err) {
-                console.error(err);
-            }
+            setForm({ serviceName: "", username: "", password: "" });
+            setShowModal(false);
+            fetchVault();
+            notify("ENTRY_ADDED");
+
+        } catch (err) {
+            console.error(err);
         }
     };
 
     const deleteKey = async (id) => {
-        if (!window.confirm("Confirm Deletion?")) return;
-
         try {
             await fetch(`http://localhost:5000/vault/delete/${id}`, {
                 method: "DELETE",
             });
+
             fetchVault();
             notify("ENTRY_REMOVED");
 
@@ -92,6 +93,8 @@ export default function KeyVault() {
         notify("DATA_COPIED_TO_CLIPBOARD");
     };
 
+
+
     return (
         <div
             className="min-h-screen bg-[#050505] text-white p-6 md:p-[3rem]"
@@ -105,7 +108,7 @@ export default function KeyVault() {
                     </Link>
 
                     <h1 className="text-3xl md:text-4xl font-extrabold italic tracking-tighter uppercase leading-none">
-                        Key<span className="text-[#b3a577]">Vault</span> <span className="text-[#151515]">//</span>
+                        Key<span className="text-[#b3a577]">Vault</span><span className="text-[#151515]">//</span>
                     </h1>
                 </div>
 
@@ -119,7 +122,7 @@ export default function KeyVault() {
                     />
 
                     <button
-                        onClick={addNewKey}
+                        onClick={() => setShowModal(true)}
                         className="bg-[#b3a577] text-black px-6 py-3 text-[10px] font-black tracking-widest uppercase hover:bg-white transition-all w-full sm:w-auto"
                     >
                         + New_Entry
@@ -134,11 +137,11 @@ export default function KeyVault() {
                         <div className="flex justify-between mb-6">
                             <div>
                                 <p className="text-[8px] text-zinc-600 uppercase tracking-widest">Service_Provider</p>
-                                <h2 className="text-lg font-bold italic tracking-tighter hover:text-[#b3a577] break-all pr-4">
+                                <h2 className="text-lg font-bold italic capitalize tracking-tighter hover:text-[#b3a577] break-all pr-4">
                                     {item.serviceName}
                                 </h2>
                             </div>
-                            <button onClick={() => deleteKey(item._id)} className="text-zinc-800 hover:text-red-500 flex-shrink-0">
+                            <button onClick={() => setDeleteId(item._id)} className="text-zinc-800 hover:text-red-500 flex-shrink-0">
                                 <Trash2 className="w-4 h-4" />
                             </button>
                         </div>
@@ -186,10 +189,101 @@ export default function KeyVault() {
             </main>
 
             {/* Footer - Vertical on small mobile */}
-            <footer className="mt-24 pt-8 border-t border-[#151515] flex flex-col sm:flex-row justify-between gap-4">
-                <p className="text-[9px] text-zinc-700 tracking-widest text-center sm:text-left">ENCRYPTION: AES-LOCAL-STORAGE</p>
+            <footer className="mt-24 pt-8 border-t border-[#151515] flex flex-col sm:flex-row justify-end gap-4">
+
                 <p className="text-[9px] tracking-[0.4em] uppercase text-center sm:text-right text-[#b3a577]">{status}</p>
             </footer>
+
+            {showModal && (
+                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+
+                    <div className="bg-[#0d0d0d] border border-[#151515] p-8 w-[90%] max-w-md">
+
+                        <h2 className="text-lg font-bold mb-6 tracking-widest uppercase text-[#b3a577]">
+                            New Entry
+                        </h2>
+
+                        {/* Service */}
+                        <input
+                            placeholder="Service Name"
+                            value={form.serviceName}
+                            onChange={(e) => setForm({ ...form, serviceName: e.target.value })}
+                            className="w-full mb-4 bg-[#050505] border border-white/10 p-3 text-xs outline-none focus:border-[#b3a577]"
+                        />
+
+                        {/* Username */}
+                        <input
+                            placeholder="Username / Email"
+                            value={form.username}
+                            onChange={(e) => setForm({ ...form, username: e.target.value })}
+                            className="w-full mb-4 bg-[#050505] border border-white/10 p-3 text-xs outline-none focus:border-[#b3a577]"
+                        />
+
+                        {/* Password */}
+                        <input
+                            placeholder="Password"
+                            type="password"
+                            value={form.password}
+                            onChange={(e) => setForm({ ...form, password: e.target.value })}
+                            className="w-full mb-6 bg-[#050505] border border-white/10 p-3 text-xs outline-none focus:border-[#b3a577]"
+                        />
+
+                        {/* Buttons */}
+                        <div className="flex justify-end gap-4">
+                            <button
+                                onClick={() => setShowModal(false)}
+                                className="px-4 py-2 text-xs uppercase text-zinc-500 hover:text-white"
+                            >
+                                Cancel
+                            </button>
+
+                            <button
+                                onClick={addNewKey}
+                                className="bg-[#b3a577] text-black px-6 py-2 text-xs font-bold uppercase tracking-widest hover:bg-white"
+                            >
+                                Save
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+            )}
+
+            {deleteId && (
+                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+
+                    <div className="bg-[#0d0d0d] border border-[#151515] p-8 w-[90%] max-w-sm">
+
+                        <h2 className="text-sm font-bold tracking-widest uppercase text-red-500 mb-4">
+                            Confirm Deletion
+                        </h2>
+
+                        <p className="text-xs text-zinc-400 mb-6">
+                           The selected record will be deleted permanently.
+                        </p>
+
+                        <div className="flex justify-end gap-4">
+                            <button
+                                onClick={() => setDeleteId(null)}
+                                className="px-4 py-2 text-xs uppercase text-zinc-500 hover:text-white"
+                            >
+                                Cancel
+                            </button>
+
+                            <button
+                                onClick={() => {
+                                    deleteKey(deleteId);
+                                    setDeleteId(null);
+                                }}
+                                className="bg-red-500 text-black px-5 py-2 text-xs font-bold uppercase tracking-widest hover:bg-red-400"
+                            >
+                                Delete
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

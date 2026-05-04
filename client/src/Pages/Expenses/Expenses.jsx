@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Trash2 } from "lucide-react";
 
 export default function FiscalTracker() {
   const [currentType, setCurrentType] = useState("expense");
@@ -6,6 +7,7 @@ export default function FiscalTracker() {
   const [desc, setDesc] = useState("");
   const [amt, setAmt] = useState("");
   const [search, setSearch] = useState("");
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   // Load data
   useEffect(() => {
@@ -53,22 +55,23 @@ export default function FiscalTracker() {
 
   const deleteEntry = async (id) => {
     try {
-      await fetch(`http://localhost:5000/expense/delete/${id}`, {
+      const res = await fetch(`http://localhost:5000/expense/delete/${id}`, {
         method: "DELETE"
       });
+
+      if (!res.ok) throw new Error("Delete failed");
 
       setTransactions(prev => prev.filter(t => t._id !== id));
 
     } catch (err) {
-      console.log(err);
+      console.log("Delete error:", err);
     }
   };
 
   const clearLogs = () => {
-    if (window.confirm("Wipe all data?")) {
-      setTransactions([]);
-      localStorage.removeItem("tp_transactions");
-    }
+    setTransactions([]);
+    localStorage.removeItem("tp_transactions");
+    setShowClearConfirm(false);
   };
 
   // Filter
@@ -93,7 +96,7 @@ export default function FiscalTracker() {
     <div className="max-w-6xl mx-auto h-full flex flex-col p-10 bg-[#080808] text-white font-mono">
 
       {/* BACK BUTTON */}
-      <a href="/" className="text-[10px] text-[#b3a577] tracking-[0.4em] uppercase mb-8 opacity-60 hover:opacity-100">
+      <a href="/" className="text-[10px] text-[#b3a577] tracking-[0.4em] uppercase mb-8 opacity-100 hover:opacity-100">
         {"<< Return_to_Core"}
       </a>
 
@@ -110,15 +113,15 @@ export default function FiscalTracker() {
 
         <div className="flex gap-10 text-right">
           <div>
-            <p className="text-[8px] text-zinc-600 uppercase mb-1">Income</p>
+            <p className="text-[9px] text-zinc-400 uppercase mb-1">Income</p>
             <p className="text-lg font-light text-green-400">${income.toFixed(2)}</p>
           </div>
           <div>
-            <p className="text-[8px] text-zinc-600 uppercase mb-1">Burn</p>
+            <p className="text-[9px] text-zinc-400 uppercase mb-1">Burn</p>
             <p className="text-lg font-light text-red-400">${burn.toFixed(2)}</p>
           </div>
           <div>
-            <p className="text-[8px] text-zinc-600 uppercase mb-1">Net</p>
+            <p className="text-[9px] text-zinc-400 uppercase mb-1">Net</p>
             <p className="text-2xl font-bold text-[#b3a577]">
               ${net.toFixed(2)}
             </p>
@@ -187,9 +190,12 @@ export default function FiscalTracker() {
       </div>
 
       {/* LIST HEADER */}
-      <div className="flex justify-between items-center text-[9px] text-zinc-600 uppercase tracking-[0.2em] border-b border-white/10 pb-3 mb-2">
+      <div className="flex justify-between items-center text-[11px] text-zinc-600 uppercase tracking-[0.2em] border-b border-white/10 pb-3 mb-2">
         <span>Monthly_Logs</span>
-        <button onClick={clearLogs} className="hover:text-red-500 transition">
+        <button
+          onClick={() => setShowClearConfirm(true)}
+          className="border border-red-900 text-red-500 px-4 py-2 text-[10px] uppercase tracking-widest hover:bg-red-500/10 hover:border-red-500 transition"
+        >
           Purge_Database
         </button>
       </div>
@@ -200,10 +206,10 @@ export default function FiscalTracker() {
           <div key={t.id} className="border-b border-white/5 py-4 text-[11px] flex justify-between">
 
             <div className="flex items-center gap-6">
-              <span className="text-zinc-600 text-[9px]">{t.date}</span>
-              <span className="text-zinc-300  uppercase">{t.description}</span>
+              <span className="text-zinc-500 text-[11px]">{t.date}</span>
+              <span className="text-zinc-400  uppercase">{t.description}</span>
 
-              <span className={`text-[8px] px-1.5 border uppercase ${t.type === "income"
+              <span className={`text-[10px] px-1.5 border uppercase ${t.type === "income"
                 ? "border-green-900 text-green-500"
                 : "border-red-900 text-red-500"
                 }`}>
@@ -211,15 +217,59 @@ export default function FiscalTracker() {
               </span>
             </div>
 
-            <span className={`font-bold ${t.type === "income"
-              ? "text-green-400"
-              : "text-[#b3a577]"
-              }`}>
-              {t.type === "income" ? "+" : "-"}${t.amount.toFixed(2)}
-            </span>
+            <div className="flex items-center gap-3">
+              <span className={`font-bold ${t.type === "income"
+                ? "text-green-400"
+                : "text-[#b3a577]"
+                }`}>
+                {t.type === "income" ? "+" : "-"}${t.amount.toFixed(2)}
+              </span>
+
+              <button
+                onClick={() => deleteEntry(t._id)}
+                className="opacity-1 group-hover:opacity-100 text-zinc-600 hover:text-red-500 transition"
+              >
+                <Trash2 size={14} />
+              </button>
+            </div>
           </div>
         ))}
       </div>
+
+      {showClearConfirm && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+
+          <div className="bg-[#0d0d0d] border border-[#151515] p-8 w-[90%] max-w-sm">
+
+            <h2 className="text-sm font-bold tracking-widest uppercase text-red-500 mb-4">
+              Confirm Deletion
+            </h2>
+
+            <p className="text-xs text-zinc-400 mb-6">
+              The selected record will be deleted permanently.
+            </p>
+
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={() => setShowClearConfirm(false)}
+                className="px-4 py-2 text-xs uppercase text-zinc-500 hover:text-white"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={clearLogs}
+                className="bg-red-500 text-black px-5 py-2 text-xs font-bold uppercase tracking-widest hover:bg-red-400"
+              >
+                Delete
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+
     </div>
   );
 }

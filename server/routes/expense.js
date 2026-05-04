@@ -3,10 +3,16 @@ const router = express.Router();
 
 const expenses = require('../controllers/expenseController');
 
-
+// GET
 router.get("/", expenses.getExpense);
-router.post("/add", expenses.addExpense);
-router.delete("/delete", expenses.deleteExpense);
 
+// ADD
+router.post("/add", expenses.addExpense);
+
+// DELETE SINGLE ✅
+router.delete("/delete/:id", expenses.deleteExpense);
+
+// DELETE ALL ✅
+router.delete("/clear", expenses.clearExpenses);
 
 module.exports = router;

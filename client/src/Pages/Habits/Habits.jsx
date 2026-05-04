@@ -18,6 +18,7 @@ export default function HabitEngine() {
   });
 
   const [input, setInput] = useState("");
+  const [deleteHabitId, setDeleteHabitId] = useState(null);
 
   // Sync storage
   useEffect(() => {
@@ -82,24 +83,33 @@ export default function HabitEngine() {
       )
     }));
   };
-
   const deleteHabit = (id) => {
-    if (!window.confirm("Purge Protocol?")) return;
-
     setState(prev => ({
       ...prev,
       habits: prev.habits.filter(h => h.id !== id)
     }));
+
+    setDeleteHabitId(null);
   };
 
-  const clearAll = () => {
-    if (!window.confirm("Total Wipe?")) return;
+  const [confirmClearAll, setConfirmClearAll] = useState(false);
 
+  const clearAll = () => {
+    setConfirmClearAll(true);
+
+    setTimeout(() => {
+      setConfirmClearAll(false);
+    }, 3000);
+  };
+
+  const confirmClearAllAction = () => {
     setState({
       lastWeek: getWeekNumber(new Date()),
       habits: [],
       history: {}
     });
+
+    setConfirmClearAll(false);
   };
 
   return (
@@ -114,13 +124,12 @@ export default function HabitEngine() {
       <header className="mb-10">
         <Link
           to="/"
-          className="text-[9px] text-[#b3a577] tracking-[0.4em] uppercase mb-10 block opacity-40 hover:opacity-100"
+          className="text-[9px] text-[#b3a577] tracking-[0.4em] uppercase mb-10 block opacity-100 hover:opacity-100"
         >
           {"<< Return_to_Core"}
         </Link>
-
         <h1 className="text-lg font-black tracking-tighter uppercase opacity-30">
-          Habit_Engine // Cycle_v5
+          Habit_Engine
         </h1>
       </header>
 
@@ -131,7 +140,7 @@ export default function HabitEngine() {
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && addHabit()}
           placeholder="Initiate_New_Protocol..."
-          className="bg-transparent px-4 py-2 text-[#b3a577] text-[10px] outline-none w-[180px] uppercase"
+          className="bg-transparent px-4 py-2 text-[#b3a577] text-[10px] outline-none w-[180px] capitalize"
         />
 
         <button
@@ -160,7 +169,7 @@ export default function HabitEngine() {
             <div className="border-r border-b border-[#151515] flex justify-between items-center px-4 text-[9px] text-white-200 bg-[#0a0a0a]">
               <span>{habit.name}</span>
               <span
-                onClick={() => deleteHabit(habit.id)}
+                onClick={() => setDeleteHabitId(habit.id)}
                 className="cursor-pointer opacity-50 hover:text-red-900"
               >
                 ×
@@ -224,11 +233,107 @@ export default function HabitEngine() {
       <div className="mt-12">
         <button
           onClick={clearAll}
-          className="text-[8px] text-white hover:text-red-900 uppercase tracking-widest"
+          className="text-[8px] text-zinc-300 hover:text-red-900 uppercase tracking-widest"
         >
-          [ Hard_Reset_Database ]
+          [ Reset_Database ]
         </button>
       </div>
+
+      {deleteHabitId && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+
+          <div className="bg-[#0d0d0d] border border-red-900 p-6 w-[90%] max-w-sm text-center">
+
+            <h2 className="text-sm font-bold uppercase tracking-widest text-red-500 mb-4">
+              Confirm Deletion
+            </h2>
+
+            <p className="text-xs text-zinc-400 mb-6">
+              Habit will be removed from tracking system.
+            </p>
+
+            <div className="flex justify-center gap-4">
+              <button
+                onClick={() => setDeleteHabitId(null)}
+                className="px-4 py-2 text-xs uppercase text-zinc-500 hover:text-white"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={() => deleteHabit(deleteHabitId)}
+                className="bg-red-600 text-white px-5 py-2 text-xs font-bold uppercase tracking-widest hover:bg-red-500"
+              >
+                Delete
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+      {confirmClearAll && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+
+          <div className="bg-[#0d0d0d] border border-red-900 p-6 w-[90%] max-w-sm text-center">
+
+            <h2 className="text-sm font-bold uppercase tracking-widest text-red-500 mb-4">
+              Confirm Deletion
+            </h2>
+
+            <p className="text-xs text-zinc-400 mb-6">
+              All habits and history will be cleared.
+            </p>
+
+            <div className="flex justify-center gap-4">
+              <button
+                onClick={() => setConfirmClearAll(false)}
+                className="px-4 py-2 text-xs uppercase text-zinc-500 hover:text-white"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={confirmClearAllAction}
+                className="bg-red-600 text-white px-5 py-2 text-xs font-bold uppercase tracking-widest hover:bg-red-500"
+              >
+                Delete
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* {confirmClearAll && (
+  <div className="fixed bottom-6 right-6 bg-[#111] border border-red-900 text-white p-4 rounded-lg shadow-lg z-50 flex items-center gap-4">
+    
+    <div>
+      <p className="text-xs text-red-400 font-bold uppercase tracking-widest">
+        Total Reset?
+      </p>
+      <p className="text-[10px] text-zinc-400">
+        All habits and history will be cleared.
+      </p>
+    </div>
+
+    <div className="flex gap-2">
+      <button
+        onClick={() => setConfirmClearAll(false)}
+        className="px-3 py-1 text-xs text-zinc-400 hover:text-white"
+      >
+        Cancel
+      </button>
+
+      <button
+        onClick={confirmClearAllAction}
+        className="px-3 py-1 text-xs bg-red-600 hover:bg-red-500 text-white font-bold uppercase"
+      >
+        Confirm
+      </button>
+    </div>
+  </div>
+)} */}
+
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { ArrowLeft, Trash2, Maximize2, Minimize2 } from "lucide-react";
+import { ArrowLeft, Maximize2, Minimize2 } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export default function TacticalPlanner() {
@@ -17,7 +17,6 @@ export default function TacticalPlanner() {
     fetch("http://localhost:5000/planner")
       .then(res => res.json())
       .then(data => {
-        console.log("API DATA:", data); // 🔍 debug
 
         const formatted = {};
 
@@ -37,26 +36,40 @@ export default function TacticalPlanner() {
   }, []);
 
   const updateCell = (id, value) => {
-    const [_, day, hour] = id.split("-");
+    const [day, hour] = id.split("-");
+    // const [_, day, hour] = id.split("-");
 
+    // 🔴 DELETE when empty
     if (!value || value.trim() === "") {
+      fetch(`http://localhost:5000/planner/delete/${day}/${hour}`, {
+        method: "DELETE",
+      })
+        .then(() => {
+          setData(prev => {
+            const updated = { ...prev };
+            delete updated[id];
+            return updated;
+          });
+        })
+        .catch(err => console.log(err));
+
       return;
     }
 
+    // 🟢 SAVE
     fetch("http://localhost:5000/planner/add", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        // userID: "test-user",
         day,
         hour: parseInt(hour),
         value
       }),
     });
 
-    setData((prev) => ({ ...prev, [id]: value }));
+    setData(prev => ({ ...prev, [id]: value }));
   };
 
   return (
@@ -71,9 +84,7 @@ export default function TacticalPlanner() {
             <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
             <span>System_Core / Dashboard</span>
           </Link>
-          <p className="text-[10px] text-zinc-800 ml-7 font-mono uppercase tracking-widest hidden sm:block">
-            Terminal ID: SRT-2026-X
-          </p>
+
         </div>
 
         <div className="flex gap-8 items-center">
@@ -93,8 +104,7 @@ export default function TacticalPlanner() {
                     method: "DELETE"
                   });
 
-                  localStorage.clear(); // optional
-                  window.location.reload();
+                  setData({}); // 🔥 clear UI instantly
 
                 } catch (err) {
                   console.log("Wipe failed:", err);
@@ -113,7 +123,7 @@ export default function TacticalPlanner() {
         <div className="grid grid-cols-[50px_repeat(7,1fr)] md:grid-cols-[70px_repeat(7,1fr)] min-w-[700px] md:min-w-full">
 
           {/* Header Row */}
-          <div className="bg-[#050505] p-3 border-b border-r border-white/5 text-[9px] text-center text-zinc-700">T_SEC</div>
+          <div className="bg-[#050505] p-3 border-b border-r border-white/5 text-[9px]  text-center text-zinc-700">TIME</div>
           {days.map(d => (
             <div key={d} className="bg-[#050505] p-3 border-b border-r border-white/5 text-[10px] text-center font-bold text-[#b3a577] uppercase tracking-widest">
               {d}
@@ -127,7 +137,7 @@ export default function TacticalPlanner() {
 
             return (
               <React.Fragment key={h}>
-                <div className={`flex items-center justify-center text-[9px] border-b border-r border-white/5 bg-[#050505] ${isCurrent ? 'text-[#b3a577] font-black' : 'text-zinc-600'}`}>
+                <div className={`flex items-center justify-center text-[11px] border-b border-r border-white/5 bg-[#050505] ${isCurrent ? 'text-[#b3a577] font-black' : 'text-zinc-600'}`}>
                   {h}
                 </div>
                 {days.map(d => {
@@ -141,8 +151,13 @@ export default function TacticalPlanner() {
                           [id]: e.target.value
                         }))}
                         onBlur={(e) => updateCell(id, e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.target.blur();
+                          }
+                        }}
                         placeholder="--"
-                        className="w-full h-full bg-transparent p-2 text-[10px] text-zinc-400 focus:text-white focus:bg-white/[0.02] outline-none resize-none transition-all leading-tight scrollbar-hide"
+                        className="w-full h-full bg-transparent p-2 text-[12px] text-zinc-400 focus:text-white focus:bg-white/[0.02] outline-none resize-none transition-all leading-tight scrollbar-hide"
                       />
                     </div>
                   );
@@ -152,8 +167,7 @@ export default function TacticalPlanner() {
           })}
         </div>
       </div>
-      <p className="mt-4 text-[8px] text-zinc-800 uppercase tracking-[0.5em] text-center">Tactical
-        Grid_v4.2 // Surat_Node</p>
+
     </div>
   );
 }

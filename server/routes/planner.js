@@ -1,20 +1,12 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
 
 const planner = require("../controllers/plannerController");
 
-// GET DATA
+// routes
 router.get("/", planner.getPlanner);
-
-
-// CREATE / SAVE DATA
 router.post("/add", planner.savePlanner);
-
-// DELETE DATA (Wipe_Database)
-router.delete("/delete", planner.deletePlanner);
-
-
+router.delete("/delete", planner.deleteAllPlanner);
+router.delete("/delete/:day/:hour", planner.deletePlanner);
 
 module.exports = router;
-
-
