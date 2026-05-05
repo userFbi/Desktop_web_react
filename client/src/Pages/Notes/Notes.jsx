@@ -3,27 +3,30 @@ import { Link } from "react-router-dom";
 import { ArrowLeft, Trash2, Plus } from "lucide-react";
 import "./Notes.css";
 
-export default function NotesPage() {
-  const [state, setState] = useState(() => {
-    return (
-      JSON.parse(localStorage.getItem("focus_mobile_v4")) || {
+const API = "http://localhost:5000/notes";
 
-        folders: ["Work", "Logs", "Vault"],
-        notes: [],
-        // Changed default active folder to "Work"
-        activeFolder: "Work",
-        activeNoteId: null,
-      }
-    );
+export default function NotesPage() {
+  const [state, setState] = useState({
+    folders: ["Work", "Logs", "Vault"],
+    notes: [],
+    activeFolder: "Work",
+    activeNoteId: null,
   });
 
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    localStorage.setItem("focus_mobile_v4", JSON.stringify(state));
-  }, [state]);
+    fetch(API)
+      .then(res => res.json())
+      .then(res => {
+        setState(prev => ({
+          ...prev,
+          notes: res.data
+        }));
+      });
+  }, []);
 
-  const activeNote = state.notes.find((n) => n.id === state.activeNoteId);
+  const activeNote = state.notes.find((n) => n._id === state.activeNoteId);
 
   const filteredNotes = state.notes.filter(
     (n) =>
@@ -32,31 +35,60 @@ export default function NotesPage() {
         n.body.toLowerCase().includes(search.toLowerCase()))
   );
 
-  const createNewNote = () => {
-    const id = Date.now();
-    const newNote = { id, title: "", body: "", folder: state.activeFolder };
-    setState((prev) => ({
+  const createNewNote = async () => {
+    const newNote = {
+      title: "",
+      body: "",
+      folder: state.activeFolder
+    };
+
+    const res = await fetch(`${API}/add`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newNote)
+    });
+
+    const data = await res.json();
+
+    setState(prev => ({
       ...prev,
-      notes: [newNote, ...prev.notes],
-      activeNoteId: id,
+      notes: [data.data, ...prev.notes],
+      activeNoteId: data.data._id
     }));
   };
 
-  const updateNote = (field, value) => {
-    setState((prev) => ({
+  const updateNote = async (field, value) => {
+    const note = state.notes.find(n => n._id === state.activeNoteId);
+
+    const updatedNote = { ...note, [field]: value };
+
+    // UI update instantly
+    setState(prev => ({
       ...prev,
-      notes: prev.notes.map((n) =>
-        n.id === prev.activeNoteId ? { ...n, [field]: value } : n
-      ),
+      notes: prev.notes.map(n =>
+        n._id === note._id ? updatedNote : n
+      )
     }));
+
+    // backend update
+    await fetch(`${API}/update/${note._id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updatedNote)
+    });
   };
 
-  const deleteNote = () => {
+  const deleteNote = async () => {
     if (!window.confirm("Execute Wipe Protocol?")) return;
-    setState((prev) => ({
+
+    await fetch(`${API}/delete/${state.activeNoteId}`, {
+      method: "DELETE"
+    });
+
+    setState(prev => ({
       ...prev,
-      notes: prev.notes.filter((n) => n.id !== prev.activeNoteId),
-      activeNoteId: null,
+      notes: prev.notes.filter(n => n._id !== prev.activeNoteId),
+      activeNoteId: null
     }));
   };
 
@@ -94,14 +126,14 @@ export default function NotesPage() {
           ))}
         </div>
 
-      
+
       </aside>
 
       {/* Main List Area */}
       <div className="flex-1 relative flex flex-col bg-[#080808] w-full">
         <header className="pt-8 md:pt-12">
           <h1 className="px-6 md:px-7 text-[10px] text-white-400 tracking-[0.5em] uppercase mb-4 md:mb-5">
-            {state.activeFolder} <span className="text-zinc-900">// SECURE_LOG</span>
+            {state.activeFolder}
           </h1>
 
           <input
@@ -118,8 +150,8 @@ export default function NotesPage() {
           {filteredNotes.length ? (
             filteredNotes.map((n) => (
               <div
-                key={n.id}
-                onClick={() => setState((prev) => ({ ...prev, activeNoteId: n.id }))}
+                key={n._id}
+                onClick={() => setState((prev) => ({ ...prev, activeNoteId: n._id }))}
                 className="px-6 md:px-[25px] py-6 md:py-[25px] border-b border-white/5 cursor-pointer hover:bg-white/[0.02]"
               >
                 <span className="block text-[11px] md:text-[12px] font-extrabold uppercase mb-[6px]">

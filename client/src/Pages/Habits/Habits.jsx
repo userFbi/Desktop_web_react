@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+const API = "http://localhost:5000/habits";
 
 export default function HabitEngine() {
   const getWeekNumber = (d) => {
@@ -9,21 +10,25 @@ export default function HabitEngine() {
     return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
   };
 
-  const [state, setState] = useState(() => {
-    return JSON.parse(localStorage.getItem("focus_habit_v5")) || {
-      lastWeek: getWeekNumber(new Date()),
-      habits: [],
-      history: {}
-    };
+  const [state, setState] = useState({
+    lastWeek: getWeekNumber(new Date()),
+    habits: [],
+    history: {}
   });
 
   const [input, setInput] = useState("");
   const [deleteHabitId, setDeleteHabitId] = useState(null);
 
-  // Sync storage
   useEffect(() => {
-    localStorage.setItem("focus_habit_v5", JSON.stringify(state));
-  }, [state]);
+    fetch(API)
+      .then(res => res.json())
+      .then(res => {
+        setState(prev => ({
+          ...prev,
+          habits: res.data
+        }));
+      });
+  }, []);
 
   // Weekly reset check
   useEffect(() => {
@@ -52,41 +57,61 @@ export default function HabitEngine() {
     }
   }, []);
 
-  const addHabit = () => {
+  const addHabit = async () => {
     if (!input) return;
+
+    const newHabit = {
+      name: input.replace(/\s+/g, "_").toUpperCase(),
+      checks: [false, false, false, false, false, false, false]
+    };
+
+    const res = await fetch(API, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newHabit)
+    });
+
+    const data = await res.json();
 
     setState(prev => ({
       ...prev,
-      habits: [
-        ...prev.habits,
-        {
-          id: Date.now(),
-          name: input.replace(/\s+/g, "_").toUpperCase(),
-          checks: [false, false, false, false, false, false, false]
-        }
-      ]
+      habits: [data.data, ...prev.habits]
     }));
 
     setInput("");
   };
 
-  const toggleDay = (id, index) => {
+  const toggleDay = async (id, index) => {
+    const habit = state.habits.find(h => h._id === id);
+
+    const updatedChecks = habit.checks.map((c, i) =>
+      i === index ? !c : c
+    );
+
+    const res = await fetch(`${API}/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...habit, checks: updatedChecks })
+    });
+
+    const data = await res.json();
+
     setState(prev => ({
       ...prev,
       habits: prev.habits.map(h =>
-        h.id === id
-          ? {
-            ...h,
-            checks: h.checks.map((c, i) => (i === index ? !c : c))
-          }
-          : h
+        h._id === id ? data.data : h
       )
     }));
   };
-  const deleteHabit = (id) => {
+
+  const deleteHabit = async (id) => {
+    await fetch(`${API}/${id}`, {
+      method: "DELETE"
+    });
+
     setState(prev => ({
       ...prev,
-      habits: prev.habits.filter(h => h.id !== id)
+      habits: prev.habits.filter(h => h._id !== id)
     }));
 
     setDeleteHabitId(null);
@@ -102,7 +127,11 @@ export default function HabitEngine() {
     }, 3000);
   };
 
-  const confirmClearAllAction = () => {
+  const confirmClearAllAction = async () => {
+    await fetch("http://localhost:5000/habits/all", {
+      method: "DELETE"
+    });
+
     setState({
       lastWeek: getWeekNumber(new Date()),
       habits: [],
@@ -165,11 +194,11 @@ export default function HabitEngine() {
 
         {/* Data */}
         {state.habits.map(habit => (
-          <React.Fragment key={habit.id}>
+          <React.Fragment key={habit._id}>
             <div className="border-r border-b border-[#151515] flex justify-between items-center px-4 text-[9px] text-white-200 bg-[#0a0a0a]">
               <span>{habit.name}</span>
               <span
-                onClick={() => setDeleteHabitId(habit.id)}
+                onClick={() => setDeleteHabitId(habit._id)}
                 className="cursor-pointer opacity-50 hover:text-red-900"
               >
                 ×
@@ -179,7 +208,7 @@ export default function HabitEngine() {
             {habit.checks.map((checked, i) => (
               <div
                 key={i}
-                onClick={() => toggleDay(habit.id, i)}
+                onClick={() => toggleDay(habit._id, i)}
                 className="border-r border-b border-[#151515] flex items-center justify-center h-[65px] cursor-pointer active:bg-[#111]"
               >
                 <span
@@ -212,7 +241,7 @@ export default function HabitEngine() {
               : current;
 
           return (
-            <div key={habit.id} className="mb-6">
+            <div key={habit._id} className="mb-6">
               <div className="flex justify-between text-[10px] text-zinc-500 uppercase mb-1">
                 <span>{habit.name}</span>
                 <span>Avg_Consistency: {Math.round(avg)}%</span>

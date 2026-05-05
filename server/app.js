@@ -17,11 +17,15 @@ app.use(express.json());
 const plannerRouter = require('./routes/planner');
 const vaultRoutes = require("./routes/vault");
 const expenseRoutes = require("./routes/expense");
+const habitRoutes = require("./routes/habit");
+const noteRoutes = require("./routes/note");
 
 
 app.use("/planner", plannerRouter);
 app.use("/vault", vaultRoutes);
 app.use("/expense", expenseRoutes);
+app.use("/habits", habitRoutes);
+app.use("/notes", noteRoutes);
 
 // Test route
 app.get("/", (req, res) => {
