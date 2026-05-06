@@ -1,7 +1,10 @@
+import { RotateCcw } from "lucide-react";
 import React, { useEffect } from "react";
 import "./DayFlow.css";
 
 const DayFlow = () => {
+    const BASE_URL = "http://localhost:5000/dayflow";
+
     let flowState = JSON.parse(localStorage.getItem("dayflow_v3")) || {
         reminders: ["Initial Boot Processed"],
         savings: [],
@@ -14,7 +17,30 @@ const DayFlow = () => {
         render();
     };
 
+    async function loadFromBackend() {
+        try {
+            const today = new Date().toISOString().split("T")[0];
 
+            // 🔹 get today events
+            const res = await fetch(`${BASE_URL}/${today}`);
+            const data = await res.json();
+
+            flowState.events[today] = data.events || [];
+
+            // 🔹 get global (savings + reminders)
+            const globalRes = await fetch(`${BASE_URL}/global`);
+            const globalData = await globalRes.json();
+
+            flowState.savings = globalData.savings || [];
+            flowState.reminders = globalData.reminders || [];
+
+            // loadFromBackend();
+            selectDate(new Date().toISOString().split("T")[0]);
+
+        } catch (err) {
+            console.error("Load error:", err);
+        }
+    }
 
     function deleteSingleTask(index) {
         flowState.events[flowState.selectedDate].splice(index, 1);
@@ -22,29 +48,28 @@ const DayFlow = () => {
         selectDate(flowState.selectedDate);
     }
 
-    function deleteTaskFromPopup(index) {
+    async function deleteTaskFromPopup(index) {
         const date = flowState.selectedDate;
 
-        if (!flowState.events[date]) return;
+        try {
+            const res = await fetch(`${BASE_URL}/event/delete/${date}/${index}`, {
+                method: "DELETE",
+            });
 
-        flowState.events[date].splice(index, 1);
+            const data = await res.json();
 
-        // remove date if empty
-        if (flowState.events[date].length === 0) {
-            delete flowState.events[date];
+            if (!res.ok) {
+                console.error("Backend error:", data);
+                throw new Error(data.message || "Delete failed");
+            }
+
+            document.querySelector(".fixed.inset-0")?.remove();
+
+            await loadFromBackend();
+
+        } catch (err) {
+            console.error("Delete error:", err);
         }
-
-        save();
-
-        // close popup
-        document.querySelector(".fixed.inset-0")?.remove();
-
-        // ✅ ALWAYS go back to TODAY
-        const today = new Date().toISOString().split("T")[0];
-
-        setTimeout(() => {
-            selectDate(today, false);
-        }, 0);
     }
 
     function initCalendar() {
@@ -120,32 +145,28 @@ const DayFlow = () => {
     `;
 
         overlay.innerHTML = `
-        <div class="bg-[#0d0d0d] border border-[#b3a577] w-[320px] p-5">
+        <div id="popup-box" class="bg-[#0d0d0d] border border-[#b3a577] w-[320px] p-5">
             <h2 class="text-[#b3a577] text-xs mb-4 capitalize tracking-widest">
-                Tasks 
+                Today-Tasks 
             </h2>
 
-           <div class="space-y-2 max-h-[200px] capitalize overflow-y-auto">
-    ${tasks
-                .map(
-                    (t, index) => `
-            <div class="flex justify-between items-center bg-[#050505] border border-[#151515] px-3 py-2 text-[10px] text-[#b3a577]">
-                <span>${t}</span>
-                <span 
-                    onclick="deleteTaskFromPopup(${index})"
-                    class="text-red-500 cursor-pointer hover:text-red-300 font-bold"
-                >
-                    ×
-                </span>
+            <div class="space-y-2 max-h-[200px] capitalize overflow-y-auto">
+                ${tasks.map((t, index) => `
+                    <div class="flex justify-between items-center bg-[#050505] border border-[#151515] px-3 py-2 text-[12px] text-[#b3a577]">
+                        <span>${t}</span>
+                        <span 
+                            onclick="deleteTaskFromPopup(${index})"
+                            class="text-red-500 cursor-pointer hover:text-red-300 font-bold"
+                        >
+                            ×
+                        </span>
+                    </div>
+                `).join("")}
             </div>
-        `
-                )
-                .join("")}
-</div>
 
             <button 
+                id="close-popup-btn"
                 class="mt-4 w-full bg-[#b3a577] text-black py-2 text-[10px] font-bold"
-                onclick="this.parentElement.parentElement.remove()"
             >
                 CLOSE
             </button>
@@ -154,34 +175,43 @@ const DayFlow = () => {
 
         document.body.appendChild(overlay);
 
-        // click outside to close
-        overlay.onclick = (e) => {
-            if (e.target === overlay) overlay.remove();
+        // CLOSE BUTTON
+        overlay.querySelector("#close-popup-btn").onclick = (e) => {
+            e.stopPropagation();
+            overlay.remove();
         };
+
+        // PREVENT CLICK INSIDE POPUP
+        overlay.querySelector("#popup-box").addEventListener("click", (e) => {
+            e.stopPropagation();
+        });
+
+        // CLICK OUTSIDE → CLOSE
+        overlay.addEventListener("click", () => {
+            overlay.remove();
+        });
     }
 
-    function saveEvent() {
+    async function saveEvent() {
         const input = document.getElementById("event-input");
         if (!input.value) return;
 
-        if (!flowState.events[flowState.selectedDate]) {
-            flowState.events[flowState.selectedDate] = [];
-        }
+        const date = flowState.selectedDate;
 
-        if (typeof flowState.events[flowState.selectedDate] === "string") {
-            flowState.events[flowState.selectedDate] = [
-                flowState.events[flowState.selectedDate],
-            ];
-        }
-
-        flowState.events[flowState.selectedDate].push(input.value);
+        await fetch(`${BASE_URL}/event/add`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                date,
+                event: input.value
+            }),
+        });
 
         input.value = "";
-        save();
 
-        // ✅ always go back to TODAY cleanly
-        const today = new Date().toISOString().split("T")[0];
-        selectDate(today, false);
+        await loadFromBackend(); // 🔥 refresh from DB
     }
 
     function editEvent() {
@@ -198,58 +228,83 @@ const DayFlow = () => {
         }
     }
 
-    function addSavings() {
+    async function addSavings() {
         const input = document.getElementById("save-amount");
         if (!input.value) return;
 
-        let amount = parseFloat(input.value);
-
-        flowState.savings.unshift({
-            amount: amount, // can be + or -
-            date: new Date().toLocaleDateString("en-IN", {
-                day: "2-digit",
-                month: "short",
+        await fetch(`${BASE_URL}/savings/add`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                amount: parseFloat(input.value)
             }),
         });
 
         input.value = "";
-        save();
+
+        await loadFromBackend();
     }
 
-    function withdrawSavings() {
+    async function withdrawSavings() {
         const input = document.getElementById("save-amount");
         if (!input.value) return;
 
-        const amount = parseFloat(input.value);
-
-        flowState.savings.unshift({
-            amount: -amount, // subtract
-            date: new Date().toLocaleDateString("en-IN", {
-                day: "2-digit",
-                month: "short",
+        await fetch(`${BASE_URL}/savings/add`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                amount: -parseFloat(input.value)
             }),
         });
 
         input.value = "";
-        save();
+
+        await loadFromBackend();
     }
 
-    function addReminder() {
+    async function addReminder() {
         const input = document.getElementById("rem-input");
         if (!input.value) return;
 
-        flowState.reminders.push(input.value);
+        await fetch(`${BASE_URL}/reminder/add`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                text: input.value
+            }),
+        });
+
         input.value = "";
-        save();
+
+        await loadFromBackend();
+    }
+
+    function deleteReminder(index) {
+        flowState.reminders.splice(index, 1);
+        save(); // auto re-render
     }
 
     function render() {
         document.getElementById("reminder-list").innerHTML = flowState.reminders
             .map(
                 (r, i) => `
-        <div class="flex justify-between items-center bg-[#050505] p-3 border border-white/5 text-[10px]">
+        <div class="flex justify-between items-center bg-[#050505] text-zinc-400 capitalize p-3 border border-white/5 text-[12px]">
             <span>${r}</span>
-        </div>`,
+
+            <span 
+                onclick="deleteReminder(${i})"
+                class="text-red-500 cursor-pointer hover:text-red-300 font-bold"
+            >
+                ×
+            </span>
+        </div>
+        `
             )
             .join("");
 
@@ -261,34 +316,63 @@ const DayFlow = () => {
         document.getElementById("ledger-list").innerHTML = flowState.savings
             .map(
                 (s, i) => `
-    <div class="flex justify-between items-center py-2 text-[11px] font-bold text-zinc-600 border-b border-[#111] pr-2">
-<span class="${s.amount < 0 ? "text-red-500" : "text-green-500"}">
-  ${s.amount > 0 ? "+" : ""}${s.amount}
-</span>
+    <div class="flex justify-between items-center py-3 text-[11px] font-bold text-zinc-600 border-b border-[#111] pr-2">
+        
+        <span class="${s.amount < 0 ? "text-red-500" : "text-green-500"}">
+            ${s.amount > 0 ? "+" : ""}${s.amount}
+        </span>
+
         <span>${s.date}</span>
-       
+
+        <span 
+            onclick="deleteSaving(${i})"
+            class="text-red-500 cursor-pointer hover:text-red-300 ml-2 font-bold"
+        >
+            ×
+        </span>
+
     </div>
-  `,
+`
             )
             .join("");
     }
 
+    function deleteSaving(index) {
+        flowState.savings.splice(index, 1);
+        save(); // 🔥 this will auto re-render + recalc total
+    }
+
+    function resetGita() {
+        localStorage.setItem(
+            "gita_progress",
+            JSON.stringify({
+                chapter: 1,
+                verse: 1,
+                lastDate: null,
+            })
+        );
+
+        loadDailyShloka(); // reload immediately
+    }
+
     async function loadDailyShloka() {
         try {
-            const today = new Date();
+            let progress = JSON.parse(localStorage.getItem("gita_progress")) || {
+                chapter: 1,
+                verse: 1,
+                lastDate: null,
+            };
 
-            const seed =
-                today.getFullYear() * 366 + today.getMonth() * 31 + today.getDate();
+            const today = new Date().toISOString().split("T")[0];
 
-            const chapter = (seed % 18) + 1;
-            const verse = (seed % 20) + 1;
+            const { chapter, verse } = progress; // ✅ use current first
 
+            // 🔥 FETCH CURRENT VERSE (before increment)
             const res = await fetch(
-                `https://vedicscriptures.github.io/slok/${chapter}/${verse}/`,
+                `https://vedicscriptures.github.io/slok/${chapter}/${verse}/`
             );
 
             const data = await res.json();
-            console.log(data);
 
             const translation =
                 data.prabhu?.et ||
@@ -306,6 +390,26 @@ ${data.slok}
 
 Meaning:
 ${translation}`;
+
+            // ✅ AFTER DISPLAY → update for next day
+            if (progress.lastDate !== today) {
+                progress.verse++;
+
+                if (progress.verse > 20) {
+                    progress.chapter++;
+                    progress.verse = 1;
+                }
+
+                if (progress.chapter > 18) {
+                    progress.chapter = 1;
+                    progress.verse = 1;
+                }
+
+                progress.lastDate = today;
+
+                localStorage.setItem("gita_progress", JSON.stringify(progress));
+            }
+
         } catch (err) {
             console.error(err);
 
@@ -319,8 +423,11 @@ ${translation}`;
         window.editEvent = editEvent;
         window.deleteEvent = deleteEvent;
         window.addSavings = addSavings;
+        window.deleteSaving = deleteSaving;
         window.addReminder = addReminder;
+        window.deleteReminder = deleteReminder;
         window.deleteTaskFromPopup = deleteTaskFromPopup;
+        window.resetGita = resetGita;
 
         const clock = setInterval(() => {
             const el = document.getElementById("live-clock");
@@ -329,7 +436,10 @@ ${translation}`;
 
         initCalendar();
         render();
-        selectDate(new Date().toISOString().split("T")[0]);
+
+        // 🔥 ADD THIS LINE
+        loadFromBackend();
+
         loadDailyShloka();
 
         return () => clearInterval(clock);
@@ -431,7 +541,7 @@ ${translation}`;
                     <input
                         type="text"
                         id="rem-input"
-                        className="mt-4 p-2"
+                        className="mt-4 p-2 capitalize text-xs"
                         placeholder="Deploy_Reminder..."
                         onKeyPress={(e) => {
                             if (e.key === "Enter") addReminder();
@@ -486,7 +596,16 @@ ${translation}`;
                 </section>
 
                 <section className="panel">
-                    <div className="panel-header">Daily_Gita_Directive!</div>
+                    <div className="panel-header">
+                        <span>Daily_Gita_Directive!</span>
+
+                        <button
+                            onClick={resetGita}
+                            className="p-1  text-red-600 rounded "
+                        >
+                            <RotateCcw size={16} />
+                        </button>
+                    </div>
 
                     <div className="flex items-center h-full">
                         <p

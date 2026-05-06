@@ -19,6 +19,8 @@ const vaultRoutes = require("./routes/vault");
 const expenseRoutes = require("./routes/expense");
 const habitRoutes = require("./routes/habit");
 const noteRoutes = require("./routes/note");
+const dayflowRoutes = require("./routes/dayflow");
+
 
 
 app.use("/planner", plannerRouter);
@@ -26,6 +28,7 @@ app.use("/vault", vaultRoutes);
 app.use("/expense", expenseRoutes);
 app.use("/habits", habitRoutes);
 app.use("/notes", noteRoutes);
+app.use("/dayflow", dayflowRoutes);
 
 // Test route
 app.get("/", (req, res) => {
