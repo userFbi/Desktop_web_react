@@ -1,4 +1,4 @@
-const HABIT = require("../models/Habit");
+const HABIT = require("../models/habit");
 
 // GET all habits
 exports.getHabits = async (req, res) => {
