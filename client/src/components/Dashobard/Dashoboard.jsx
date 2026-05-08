@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import './Dashboard.css';
 
 const Dashboard = () => {
+  const BASE_URL = process.env.REACT_APP_API_URL; 
+
   // --- STATE ---
   const [timeLeft, setTimeLeft] = useState(25 * 60);
   const [isActive, setIsActive] = useState(false);
@@ -63,7 +65,8 @@ const Dashboard = () => {
 
   const syncTasks = async () => {
     try {
-      const res = await fetch("http://localhost:5000/planner");
+      const res = await fetch(`${BASE_URL}/planner`)
+      // const res = await fetch("http://localhost:5000/planner");
       const result = await res.json();
 
       const arr = result.data || result;
