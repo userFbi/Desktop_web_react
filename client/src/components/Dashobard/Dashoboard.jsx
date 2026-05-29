@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import './Dashboard.css';
 
 const Dashboard = () => {
-  const BASE_URL = process.env.REACT_APP_API_URL; 
+
+  const BASE_URL = process.env.REACT_APP_API_URL;
 
   // --- STATE ---
   const [timeLeft, setTimeLeft] = useState(25 * 60);
@@ -13,10 +14,11 @@ const Dashboard = () => {
   const [clock, setClock] = useState('');
   const [tasks, setTasks] = useState([]);
   const [taskInput, setTaskInput] = useState('');
-  const [scratch, setScratch] = useState(localStorage.getItem('tp_scratch') || '');
+  const [scratch, setScratch] = useState('');
   const [isZenMode, setIsZenMode] = useState(false);
 
   const timerRef = useRef(null);
+  const scratchTimer = useRef(null);
 
   // --- ENGINES ---
 
@@ -60,13 +62,21 @@ const Dashboard = () => {
     const today = new Date().toDateString();
     const savedData = JSON.parse(localStorage.getItem("tp_session_data") || '{"date": "", "count": 0}');
     if (savedData.date === today) setSessionCount(savedData.count);
+
     syncTasks();
+
+    fetch(`${BASE_URL}/scratch`)
+      .then(res => res.json())
+      .then(data => setScratch(data.text || ''))
+      .catch(() => setScratch(localStorage.getItem('tp_scratch') || ''));
+
   }, []);
+
 
   const syncTasks = async () => {
     try {
-      const res = await fetch(`${BASE_URL}/planner`)
-      // const res = await fetch("http://localhost:5000/planner");
+      // const res = await fetch(`${BASE_URL}/planner`)
+      const res = await fetch(`${BASE_URL}/planner`);
       const result = await res.json();
 
       const arr = result.data || result;
@@ -151,6 +161,24 @@ const Dashboard = () => {
       setTaskInput('');
     }
   };
+
+  // ✅ Scratch save handler
+  const handleScratchChange = (e) => {
+    const value = e.target.value;
+    setScratch(value);
+    localStorage.setItem("tp_scratch", value); // local backup
+
+    // debounce — saves 1s after typing stops
+    clearTimeout(scratchTimer.current);
+    scratchTimer.current = setTimeout(() => {
+      fetch(`${BASE_URL}/scratch/save`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: value }),
+      }).catch(err => console.log('Scratch save error:', err));
+    }, 1000);
+  };
+
 
   return (
     <div className={`flex h-screen w-full bg-[#080808] transition-all duration-500 ${isZenMode ? 'zen-mode' : ''}`}>
@@ -268,11 +296,8 @@ const Dashboard = () => {
             <p className="text-[10px] text-zinc-600 uppercase tracking-[0.3em] mb-4">Scratchpad</p>
             <textarea
               value={scratch}
-              onChange={(e) => {
-                setScratch(e.target.value);
-                localStorage.setItem("tp_scratch", e.target.value);
-              }}
-              className="w-full h-48 bg-transparent border-none text-zinc-400 text-xs font-mono leading-relaxed outline-none resize-none"
+              onChange={handleScratchChange}
+              className="w-full h-48 capitalize bg-transparent border-none text-zinc-400 text-xs font-mono leading-relaxed outline-none resize-none"
               placeholder="// Thoughts..."
             />
           </div>

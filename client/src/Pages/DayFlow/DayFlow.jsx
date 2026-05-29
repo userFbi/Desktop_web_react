@@ -3,17 +3,20 @@ import React, { useEffect } from "react";
 import "./DayFlow.css";
 
 const DayFlow = () => {
-    const BASE_URL = "http://localhost:5000/dayflow";
-
+    const BASE_URL = process.env.REACT_APP_API_URL;
+    
+    
     let flowState = JSON.parse(localStorage.getItem("dayflow_v3")) || {
         reminders: ["Initial Boot Processed"],
         savings: [],
         events: {},
         selectedDate: new Date().toISOString().split("T")[0],
     };
+    const stateRef = React.useRef(flowState);
 
     const save = () => {
         localStorage.setItem("dayflow_v3", JSON.stringify(flowState));
+        stateRef.current = flowState;
         render();
     };
 
@@ -21,21 +24,27 @@ const DayFlow = () => {
         try {
             const today = new Date().toISOString().split("T")[0];
 
-            // 🔹 get today events
-            const res = await fetch(`${BASE_URL}/${today}`);
+            // ✅ Fetch ALL events at once
+            const res = await fetch(`${BASE_URL}/dayflow`);
             const data = await res.json();
 
-            flowState.events[today] = data.events || [];
+            // data.data is array of all docs from getDayFlow
+            if (data.data) {
+                data.data.forEach(doc => {
+                    if (doc.date !== "global") {
+                        flowState.events[doc.date] = doc.events || [];
+                    }
+                });
+            }
 
-            // 🔹 get global (savings + reminders)
-            const globalRes = await fetch(`${BASE_URL}/global`);
+            // ✅ global = savings + reminders
+            const globalRes = await fetch(`${BASE_URL}/dayflow/global`);
             const globalData = await globalRes.json();
-
             flowState.savings = globalData.savings || [];
             flowState.reminders = globalData.reminders || [];
 
-            // loadFromBackend();
-            selectDate(new Date().toISOString().split("T")[0]);
+            save();
+            selectDate(today, false);
 
         } catch (err) {
             console.error("Load error:", err);
@@ -49,24 +58,17 @@ const DayFlow = () => {
     }
 
     async function deleteTaskFromPopup(index) {
-        const date = flowState.selectedDate;
+        const date = flowState.selectedDate; // ✅ now actually used
 
         try {
-            const res = await fetch(`${BASE_URL}/event/delete/${date}/${index}`, {
+            const res = await fetch(`${BASE_URL}/dayflow/event/delete/${date}/${index}`, { // ✅ fixed
                 method: "DELETE",
             });
 
-            const data = await res.json();
-
-            if (!res.ok) {
-                console.error("Backend error:", data);
-                throw new Error(data.message || "Delete failed");
-            }
+            if (!res.ok) throw new Error("Delete failed");
 
             document.querySelector(".fixed.inset-0")?.remove();
-
             await loadFromBackend();
-
         } catch (err) {
             console.error("Delete error:", err);
         }
@@ -196,22 +198,19 @@ const DayFlow = () => {
         const input = document.getElementById("event-input");
         if (!input.value) return;
 
-        const date = flowState.selectedDate;
+        const date = flowState.selectedDate; // ✅ already correct
 
-        await fetch(`${BASE_URL}/event/add`, {
+        await fetch(`${BASE_URL}/dayflow/event/add`, {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                date,
-                event: input.value
-            }),
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ date, event: input.value }),
         });
 
         input.value = "";
 
-        await loadFromBackend(); // 🔥 refresh from DB
+        // ✅ After saving, reload AND show popup for that date
+        await loadFromBackend();
+        selectDate(date, true); // ← force show popup so you see the new task
     }
 
     function editEvent() {
@@ -232,62 +231,68 @@ const DayFlow = () => {
         const input = document.getElementById("save-amount");
         if (!input.value) return;
 
-        await fetch(`${BASE_URL}/savings/add`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                amount: parseFloat(input.value)
-            }),
-        });
+        try {
+            const res = await fetch(`${BASE_URL}/dayflow/savings/add`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ amount: parseFloat(input.value) }),
+            });
 
-        input.value = "";
+            if (!res.ok) throw new Error("Deposit failed");
 
-        await loadFromBackend();
+            input.value = "";
+            await loadFromBackend();
+        } catch (err) {
+            console.error("Savings error:", err);
+        }
     }
 
     async function withdrawSavings() {
         const input = document.getElementById("save-amount");
         if (!input.value) return;
 
-        await fetch(`${BASE_URL}/savings/add`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                amount: -parseFloat(input.value)
-            }),
-        });
+        try {
+            const res = await fetch(`${BASE_URL}/dayflow/savings/add`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ amount: -parseFloat(input.value) }),
+            });
 
-        input.value = "";
+            if (!res.ok) throw new Error("Withdraw failed");
 
-        await loadFromBackend();
+            input.value = "";
+            await loadFromBackend();
+        } catch (err) {
+            console.error("Withdraw error:", err);
+        }
     }
 
     async function addReminder() {
         const input = document.getElementById("rem-input");
         if (!input.value) return;
 
-        await fetch(`${BASE_URL}/reminder/add`, {
+        // ✅ BASE_URL
+        await fetch(`${BASE_URL}/dayflow/reminder/add`, {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                text: input.value
-            }),
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text: input.value }),
         });
 
         input.value = "";
-
         await loadFromBackend();
     }
+    async function deleteReminder(index) {
+        try {
+            const res = await fetch(`${BASE_URL}/dayflow/reminder/delete/${index}`, {
+                method: "DELETE",
+            });
 
-    function deleteReminder(index) {
-        flowState.reminders.splice(index, 1);
-        save(); // auto re-render
+            if (!res.ok) throw new Error("Reminder delete failed");
+
+            await loadFromBackend(); // ✅ refresh from backend
+        } catch (err) {
+            console.error("Reminder delete error:", err);
+        }
     }
 
     function render() {
@@ -337,9 +342,18 @@ const DayFlow = () => {
             .join("");
     }
 
-    function deleteSaving(index) {
-        flowState.savings.splice(index, 1);
-        save(); // 🔥 this will auto re-render + recalc total
+    async function deleteSaving(index) {
+        try {
+            const res = await fetch(`${BASE_URL}/dayflow/savings/delete/${index}`, {
+                method: "DELETE",
+            });
+
+            if (!res.ok) throw new Error("Delete saving failed");
+
+            await loadFromBackend();
+        } catch (err) {
+            console.error("Delete saving error:", err);
+        }
     }
 
     function resetGita() {
@@ -418,17 +432,50 @@ ${translation}`;
         }
     }
 
+    // useEffect(() => {
+    //     window.saveEvent = saveEvent;
+    //     window.editEvent = editEvent;
+    //     window.deleteEvent = deleteEvent;
+    //     window.addSavings = addSavings;
+    //     window.deleteSaving = deleteSaving;
+    //     window.addReminder = addReminder;
+    //     window.deleteReminder = deleteReminder;
+    //     window.deleteTaskFromPopup = deleteTaskFromPopup;
+    //     window.resetGita = resetGita;
+
+    //     const clock = setInterval(() => {
+    //         const el = document.getElementById("live-clock");
+    //         if (el) el.innerText = new Date().toLocaleTimeString("en-US");
+    //     }, 1000);
+
+    //     initCalendar();
+    //     render();
+
+    //     // 🔥 ADD THIS LINE
+    //     loadFromBackend();
+
+    //     loadDailyShloka();
+
+    //     return () => clearInterval(clock);
+    // }, []);
+
+
     useEffect(() => {
+        // Re-register every time so functions are never stale
         window.saveEvent = saveEvent;
         window.editEvent = editEvent;
         window.deleteEvent = deleteEvent;
         window.addSavings = addSavings;
+        window.withdrawSavings = withdrawSavings;
         window.deleteSaving = deleteSaving;
         window.addReminder = addReminder;
         window.deleteReminder = deleteReminder;
         window.deleteTaskFromPopup = deleteTaskFromPopup;
         window.resetGita = resetGita;
+    }); // ← NO dependency array = runs after every render ✅
 
+    useEffect(() => {
+        // One-time setup only
         const clock = setInterval(() => {
             const el = document.getElementById("live-clock");
             if (el) el.innerText = new Date().toLocaleTimeString("en-US");
@@ -436,15 +483,11 @@ ${translation}`;
 
         initCalendar();
         render();
-
-        // 🔥 ADD THIS LINE
         loadFromBackend();
-
         loadDailyShloka();
 
         return () => clearInterval(clock);
-    }, []);
-
+    }, []); // ← empty = runs once ✅
     return (
         <>
             <header className="flex justify-between items-end max-w-[1200px] p-10 mx-auto mb-8">

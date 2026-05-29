@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { Trash2 } from "lucide-react";
 
 export default function FiscalTracker() {
+  const BASE_URL = process.env.REACT_APP_API_URL;
+
   const [currentType, setCurrentType] = useState("expense");
   const [transactions, setTransactions] = useState([]);
   const [desc, setDesc] = useState("");
@@ -10,11 +12,13 @@ export default function FiscalTracker() {
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   // Load data
+
+
   useEffect(() => {
-    fetch("http://localhost:5000/expense")
+    fetch(`${BASE_URL}/expense`)
       .then(res => res.json())
       .then(res => {
-        setTransactions(res.data); // because your backend sends {status, data}
+        setTransactions(res.data || []); // ✅ fallback to empty array
       })
       .catch(err => console.log(err));
   }, []);
@@ -28,7 +32,7 @@ export default function FiscalTracker() {
     if (!desc || !amt) return;
 
     try {
-      await fetch("http://localhost:5000/expense/add", {
+      await fetch(`${BASE_URL}/expense/add`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -41,7 +45,7 @@ export default function FiscalTracker() {
       });
 
       // reload data
-      fetch("http://localhost:5000/expense")
+      await fetch(`${BASE_URL}/expense`)
         .then(res => res.json())
         .then(res => setTransactions(res.data));
 
@@ -55,7 +59,7 @@ export default function FiscalTracker() {
 
   const deleteEntry = async (id) => {
     try {
-      const res = await fetch(`http://localhost:5000/expense/delete/${id}`, {
+      const res = await fetch(`${BASE_URL}/expense/delete/${id}`, {
         method: "DELETE"
       });
 
@@ -219,8 +223,8 @@ export default function FiscalTracker() {
 
             <div className="flex items-center gap-3">
               <span className={`font-bold ${t.type === "income"
-                ? "text-green-400"
-                : "text-[#b3a577]"
+                ? "text-green-400 text-[15px]"
+                : "text-[#b3a577] text-[15px]"
                 }`}>
                 {t.type === "income" ? "+" : "-"}${t.amount.toFixed(2)}
               </span>

@@ -36,8 +36,8 @@ export default function TacticalPlanner() {
   }, []);
 
   const updateCell = (id, value) => {
-    const [day, hour] = id.split("-");
-    // const [_, day, hour] = id.split("-");
+    // const [day, hour] = id.split("-");
+    const [_, day, hour] = id.split("-");
 
     // 🔴 DELETE when empty
     if (!value || value.trim() === "") {

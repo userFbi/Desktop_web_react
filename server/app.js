@@ -6,7 +6,7 @@ const cors = require("cors");
 const app = express();
 
 // DB
-mongoose.connect(process.env.MONGO_URL)
+mongoose.connect("mongodb://localhost:27017/Tp")
   .then(() => console.log('DB CONNECTED ✅'))
   .catch(err => console.log(err));
 
@@ -21,6 +21,7 @@ const expenseRoutes = require("./routes/expense");
 const habitRoutes = require("./routes/habit");
 const noteRoutes = require("./routes/note");
 const dayflowRoutes = require("./routes/dayflow");
+const scratchRoutes = require("./routes/scratch");
 
 app.use("/planner", plannerRouter);
 app.use("/vault", vaultRoutes);
@@ -28,6 +29,7 @@ app.use("/expense", expenseRoutes);
 app.use("/habits", habitRoutes);
 app.use("/notes", noteRoutes);
 app.use("/dayflow", dayflowRoutes);
+app.use("/scratch", scratchRoutes);
 
 // Test route
 app.get("/", (req, res) => {
