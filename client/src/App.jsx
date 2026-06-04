@@ -8,12 +8,11 @@ import KeyVault from './Pages/Vault/Vault';
 import Dashboard from './components/Dashobard/Dashoboard';
 import DayFlow from './Pages/DayFlow/DayFlow';
 import Expenses from './Pages/Expenses/Expenses';
-import AuthPage from './Pages/Auth/AuthPage'; // Your new Login/Signup component
+import AuthPage from './Pages/Auth/AuthPage';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('focusToken'));
 
-  // Sync state if localStorage changes (optional but good for multi-tab)
   useEffect(() => {
     const token = localStorage.getItem('focusToken');
     setIsAuthenticated(!!token);
@@ -22,31 +21,21 @@ function App() {
   return (
     <Router>
       <Routes>
-        {/* --- PUBLIC ROUTE --- */}
-        {/* <Route
-          path="/login"   
-          element={!isAuthenticated ? <AuthPage onLogin={() => setIsAuthenticated(true)} /> : <Navigate to="/" />}
-        /> */}
+        {/* PUBLIC ROUTE */}
+        <Route
+          path="/login"
+          element={!isAuthenticated ? <AuthPage onLoginSuccess={() => setIsAuthenticated(true)} /> : <Navigate to="/" />}
+        />
 
-        {/* --- PROTECTED ROUTES --- */}
-        {/* If not authenticated, every path below will bounce the user to /login */}
-        {/* <Route path="/" element={isAuthenticated ? <Dashboard /> : <Navigate to="/login" />} />
+        {/* PROTECTED ROUTES */}
+        <Route path="/" element={isAuthenticated ? <Dashboard /> : <Navigate to="/login" />} />
         <Route path="/dayflow" element={isAuthenticated ? <DayFlow /> : <Navigate to="/login" />} />
         <Route path="/keyVault" element={isAuthenticated ? <KeyVault /> : <Navigate to="/login" />} />
         <Route path="/expenses" element={isAuthenticated ? <Expenses /> : <Navigate to="/login" />} />
         <Route path="/planner" element={isAuthenticated ? <TacticalPlanner /> : <Navigate to="/login" />} />
         <Route path="/notes" element={isAuthenticated ? <NotesPage /> : <Navigate to="/login" />} />
-        <Route path="/habits" element={isAuthenticated ? <HabitEngine /> : <Navigate to="/login" />} /> */}
+        <Route path="/habits" element={isAuthenticated ? <HabitEngine /> : <Navigate to="/login" />} />
 
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/dayflow" element={<DayFlow />} />
-        <Route path="/keyVault" element={<KeyVault />} />
-        <Route path="/expenses" element={<Expenses />} />
-        <Route path="/planner" element={<TacticalPlanner />} />
-        <Route path="/notes" element={<NotesPage />} />
-        <Route path="/habits" element={<HabitEngine />} />
-
-        {/* Fallback for any undefined routes */}
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Router>

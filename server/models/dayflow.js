@@ -1,19 +1,11 @@
 const mongoose = require("mongoose");
 
 const dayFlowSchema = new mongoose.Schema({
-    date: { type: String, required: true, unique: true },
-
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    date: { type: String, required: true }, // ← remove unique:true
     events: [String],
-
-    savings: [
-        {
-            amount: Number,
-            date: String
-        }
-    ],
-
+    savings: [{ amount: Number, date: String }],
     reminders: [String]
-
 }, { timestamps: true });
 
 module.exports = mongoose.model("DayFlow", dayFlowSchema);

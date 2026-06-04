@@ -4,8 +4,13 @@ import "./DayFlow.css";
 
 const DayFlow = () => {
     const BASE_URL = process.env.REACT_APP_API_URL;
-    
-    
+    const token = localStorage.getItem('focusToken');
+
+    const authHeaders = {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}` // ← add this
+    };
+
     let flowState = JSON.parse(localStorage.getItem("dayflow_v3")) || {
         reminders: ["Initial Boot Processed"],
         savings: [],
@@ -25,7 +30,11 @@ const DayFlow = () => {
             const today = new Date().toISOString().split("T")[0];
 
             // ✅ Fetch ALL events at once
-            const res = await fetch(`${BASE_URL}/dayflow`);
+            const res = await fetch(`${BASE_URL}/dayflow`,
+                {
+                    headers: { "Authorization": `Bearer ${token}` }
+                }
+            );
             const data = await res.json();
 
             // data.data is array of all docs from getDayFlow
@@ -38,7 +47,9 @@ const DayFlow = () => {
             }
 
             // ✅ global = savings + reminders
-            const globalRes = await fetch(`${BASE_URL}/dayflow/global`);
+            const globalRes = await fetch(`${BASE_URL}/dayflow/global`, {
+                headers: { "Authorization": `Bearer ${token}` }
+            });
             const globalData = await globalRes.json();
             flowState.savings = globalData.savings || [];
             flowState.reminders = globalData.reminders || [];
@@ -61,8 +72,9 @@ const DayFlow = () => {
         const date = flowState.selectedDate; // ✅ now actually used
 
         try {
-            const res = await fetch(`${BASE_URL}/dayflow/event/delete/${date}/${index}`, { // ✅ fixed
+            const res = await fetch(`${BASE_URL}/dayflow/event/delete/${date}/${index}`, {
                 method: "DELETE",
+                headers: { "Authorization": `Bearer ${token}` }
             });
 
             if (!res.ok) throw new Error("Delete failed");
@@ -202,7 +214,7 @@ const DayFlow = () => {
 
         await fetch(`${BASE_URL}/dayflow/event/add`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: authHeaders,
             body: JSON.stringify({ date, event: input.value }),
         });
 
@@ -234,7 +246,7 @@ const DayFlow = () => {
         try {
             const res = await fetch(`${BASE_URL}/dayflow/savings/add`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: authHeaders,
                 body: JSON.stringify({ amount: parseFloat(input.value) }),
             });
 
@@ -254,7 +266,7 @@ const DayFlow = () => {
         try {
             const res = await fetch(`${BASE_URL}/dayflow/savings/add`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: authHeaders,
                 body: JSON.stringify({ amount: -parseFloat(input.value) }),
             });
 
@@ -274,7 +286,7 @@ const DayFlow = () => {
         // ✅ BASE_URL
         await fetch(`${BASE_URL}/dayflow/reminder/add`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: authHeaders,
             body: JSON.stringify({ text: input.value }),
         });
 
@@ -285,6 +297,7 @@ const DayFlow = () => {
         try {
             const res = await fetch(`${BASE_URL}/dayflow/reminder/delete/${index}`, {
                 method: "DELETE",
+                headers: { "Authorization": `Bearer ${token}` }
             });
 
             if (!res.ok) throw new Error("Reminder delete failed");
@@ -346,6 +359,7 @@ const DayFlow = () => {
         try {
             const res = await fetch(`${BASE_URL}/dayflow/savings/delete/${index}`, {
                 method: "DELETE",
+                 headers: { "Authorization": `Bearer ${token}` } 
             });
 
             if (!res.ok) throw new Error("Delete saving failed");

@@ -157,7 +157,7 @@ export default function TacticalPlanner() {
                           }
                         }}
                         placeholder="--"
-                        className="w-full h-full bg-transparent p-2 text-[12px] text-zinc-400 focus:text-white focus:bg-white/[0.02] outline-none resize-none transition-all leading-tight scrollbar-hide"
+                        className="w-full h-full bg-transparent p-2 text-[12px] text-zinc-400 focus:text-white focus:bg-white/[0.02] outline-none resize-none transition-all leading-tight scrollbar-hide capitalize"
                       />
                     </div>
                   );

@@ -1,28 +1,16 @@
 const express = require("express");
 const router = express.Router();
-
+const auth = require("../middleware/auth"); // ← import auth
 const dayflow = require("../controllers/dayflowController");
 
-// 🔹 GET ALL (full state)
-router.get("/", dayflow.getDayFlow);
-
-
-// 🔹 EVENTS
-router.post("/event/add", dayflow.addEvent);
-router.delete("/event/delete/:date/:index", dayflow.deleteEvent);
-
-// 🔹 SAVINGS
-router.post("/savings/add", dayflow.addSavings);
-router.delete("/savings/delete/:index", dayflow.deleteSaving);
-
-// 🔹 REMINDERS
-router.post("/reminder/add", dayflow.addReminder);
-router.delete("/reminder/delete/:index", dayflow.deleteReminder);
-
-// 🔹 RESET
-router.delete("/reset", dayflow.resetDayFlow);
-
-// 🔹 GET BY DATE (⚠️ ALWAYS KEEP LAST)
-router.get("/:date", dayflow.getByDate);
-
+// ✅ Add auth to ALL routes
+router.get("/", auth, dayflow.getDayFlow);
+router.post("/event/add", auth, dayflow.addEvent);
+router.delete("/event/delete/:date/:index", auth, dayflow.deleteEvent);
+router.post("/savings/add", auth, dayflow.addSavings);
+router.delete("/savings/delete/:index", auth, dayflow.deleteSaving);
+router.post("/reminder/add", auth, dayflow.addReminder);
+router.delete("/reminder/delete/:index", auth, dayflow.deleteReminder);
+router.delete("/reset", auth, dayflow.resetDayFlow);
+router.get("/:date", auth, dayflow.getByDate);
 module.exports = router;

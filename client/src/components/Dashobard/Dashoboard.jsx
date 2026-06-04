@@ -17,10 +17,17 @@ const Dashboard = () => {
   const [scratch, setScratch] = useState('');
   const [isZenMode, setIsZenMode] = useState(false);
 
+
   const timerRef = useRef(null);
   const scratchTimer = useRef(null);
 
   // --- ENGINES ---
+
+  const handleLogout = () => {
+    localStorage.removeItem('focusToken');
+    localStorage.removeItem('username');
+    window.location.href = '/login';  // redirect to login
+  };
 
   // 1. Clock Engine
   useEffect(() => {
@@ -271,7 +278,7 @@ const Dashboard = () => {
             <div className="h-[108px] overflow-y-auto custom-scroll pr-2">
               <div className="space-y-0">
                 {tasks.map((task, i) => (
-                  <div key={i} onClick={() => removeTask(task.key, i)} className="text-xs font-mono py-2 border-b border-white/5 flex gap-4 items-center cursor-pointer group">
+                  <div key={i} onClick={() => removeTask(task.key, i)} className="capitalize text-xs font-mono py-2 border-b border-white/5 flex gap-4 items-center cursor-pointer group">
                     {task.time ? (
                       <span className="text-[#b3a577] opacity-40 group-hover:opacity-100 transition-opacity">{task.time}</span>
                     ) : (
@@ -303,8 +310,9 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <div className="mt-8 flex justify-end items-center">
+        <div className="mt-8 flex justify-between items-center">
           <Link to="/planner" className="text-[9px] font-bold text-[#b3a577]  transition-all uppercase">Open_Planner</Link>
+          <button className="text-[9px] font-bold text-[#690512] hover:text-[#d30c26]   transition-all uppercase" onClick={handleLogout}>Logout</button>
         </div>
       </aside>
     </div>

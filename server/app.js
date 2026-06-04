@@ -2,19 +2,22 @@ require("dotenv").config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require("cors");
-
+const cookieParser = require('cookie-parser');
 const app = express();
 
-// DB
+// ── Middleware (FIRST) ─────────────────────────
+app.use(cors({ origin: 'http://localhost:3000', credentials: true }));
+app.use(express.json());
+app.use(cookieParser());
+
+// ── DB ────────────────────────────────────────
 mongoose.connect("mongodb://localhost:27017/Tp")
   .then(() => console.log('DB CONNECTED ✅'))
   .catch(err => console.log(err));
 
-// Middleware
-app.use(cors());
-app.use(express.json());
-
-// Routes
+// ── Routes (AFTER middleware) ──────────────────
+const usersRouter = require('./routes/users');
+const authRouter = require('./routes/auth');      // ← moved up
 const plannerRouter = require('./routes/planner');
 const vaultRoutes = require("./routes/vault");
 const expenseRoutes = require("./routes/expense");
@@ -23,6 +26,8 @@ const noteRoutes = require("./routes/note");
 const dayflowRoutes = require("./routes/dayflow");
 const scratchRoutes = require("./routes/scratch");
 
+app.use('/users', usersRouter);
+app.use('/api/auth', authRouter);   // ← now works because authRouter is defined above
 app.use("/planner", plannerRouter);
 app.use("/vault", vaultRoutes);
 app.use("/expense", expenseRoutes);
@@ -31,19 +36,14 @@ app.use("/notes", noteRoutes);
 app.use("/dayflow", dayflowRoutes);
 app.use("/scratch", scratchRoutes);
 
-// Test route
-app.get("/", (req, res) => {
-  res.send("API WORKING 🚀");
-});
+// ── Test Route ────────────────────────────────
+app.get("/", (req, res) => res.send("API WORKING 🚀"));
 
-// Error handler
+// ── Error Handler ─────────────────────────────
 app.use((err, req, res, next) => {
   res.status(500).json({ message: err.message });
 });
 
-// Start server
+// ── Start Server ──────────────────────────────
 const PORT = process.env.PORT || 5000;
-
-app.listen(PORT, () => {
-  console.log(`SERVER RUNNING ON ${PORT} 🚀`);
-});
+app.listen(PORT, () => console.log(`SERVER RUNNING ON ${PORT} 🚀`));
