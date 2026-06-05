@@ -4,11 +4,23 @@ import "./DayFlow.css";
 
 const DayFlow = () => {
     const BASE_URL = process.env.REACT_APP_API_URL;
-    const token = localStorage.getItem('focusToken');
 
-    const authHeaders = {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}` // ← add this
+    const getAuthHeaders = () => {
+        const token = localStorage.getItem('focusToken');
+
+        if (token) {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            if (payload.exp * 1000 < Date.now()) {
+                localStorage.clear();
+                window.location.href = '/login'; // redirect to login
+                return {};
+            }
+        }
+
+        return {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+        }
     };
 
     let flowState = JSON.parse(localStorage.getItem("dayflow_v3")) || {
@@ -26,13 +38,15 @@ const DayFlow = () => {
     };
 
     async function loadFromBackend() {
+        const token = localStorage.getItem('focusToken');
+        console.log("Token at load time:", token);
         try {
             const today = new Date().toISOString().split("T")[0];
 
             // ✅ Fetch ALL events at once
             const res = await fetch(`${BASE_URL}/dayflow`,
                 {
-                    headers: { "Authorization": `Bearer ${token}` }
+                    headers: getAuthHeaders()
                 }
             );
             const data = await res.json();
@@ -48,7 +62,7 @@ const DayFlow = () => {
 
             // ✅ global = savings + reminders
             const globalRes = await fetch(`${BASE_URL}/dayflow/global`, {
-                headers: { "Authorization": `Bearer ${token}` }
+                headers: getAuthHeaders()
             });
             const globalData = await globalRes.json();
             flowState.savings = globalData.savings || [];
@@ -74,7 +88,7 @@ const DayFlow = () => {
         try {
             const res = await fetch(`${BASE_URL}/dayflow/event/delete/${date}/${index}`, {
                 method: "DELETE",
-                headers: { "Authorization": `Bearer ${token}` }
+                headers: getAuthHeaders()
             });
 
             if (!res.ok) throw new Error("Delete failed");
@@ -214,7 +228,7 @@ const DayFlow = () => {
 
         await fetch(`${BASE_URL}/dayflow/event/add`, {
             method: "POST",
-            headers: authHeaders,
+            headers: getAuthHeaders(),
             body: JSON.stringify({ date, event: input.value }),
         });
 
@@ -246,7 +260,7 @@ const DayFlow = () => {
         try {
             const res = await fetch(`${BASE_URL}/dayflow/savings/add`, {
                 method: "POST",
-                headers: authHeaders,
+                headers: getAuthHeaders(),
                 body: JSON.stringify({ amount: parseFloat(input.value) }),
             });
 
@@ -266,7 +280,7 @@ const DayFlow = () => {
         try {
             const res = await fetch(`${BASE_URL}/dayflow/savings/add`, {
                 method: "POST",
-                headers: authHeaders,
+                headers: getAuthHeaders(),
                 body: JSON.stringify({ amount: -parseFloat(input.value) }),
             });
 
@@ -286,7 +300,7 @@ const DayFlow = () => {
         // ✅ BASE_URL
         await fetch(`${BASE_URL}/dayflow/reminder/add`, {
             method: "POST",
-            headers: authHeaders,
+            headers: getAuthHeaders(),
             body: JSON.stringify({ text: input.value }),
         });
 
@@ -297,7 +311,7 @@ const DayFlow = () => {
         try {
             const res = await fetch(`${BASE_URL}/dayflow/reminder/delete/${index}`, {
                 method: "DELETE",
-                headers: { "Authorization": `Bearer ${token}` }
+                headers: getAuthHeaders(),
             });
 
             if (!res.ok) throw new Error("Reminder delete failed");
@@ -359,7 +373,7 @@ const DayFlow = () => {
         try {
             const res = await fetch(`${BASE_URL}/dayflow/savings/delete/${index}`, {
                 method: "DELETE",
-                 headers: { "Authorization": `Bearer ${token}` } 
+                headers: getAuthHeaders(),
             });
 
             if (!res.ok) throw new Error("Delete saving failed");

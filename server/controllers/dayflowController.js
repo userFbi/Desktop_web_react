@@ -86,22 +86,19 @@ exports.deleteEvent = async (req, res) => {
 exports.addSavings = async (req, res) => {
     try {
         const userId = req.user.id;
-        const { amount, date } = req.body;
+        const { amount } = req.body;
 
-        if (!amount) return res.status(400).json({ message: "Amount required" });
+        if (amount === undefined || amount === null) {
+            return res.status(400).json({ message: "Amount required" });
+        }
 
         const doc = await DayFlow.findOneAndUpdate(
             { userId, date: "global" },
             {
-                $push: {
-                    savings: {
-                        amount,
-                        date: date || new Date().toLocaleDateString("en-IN")
-                    }
-                },
-                $setOnInsert: { userId, date: "global" } // ← fixed
+                $push: { savings: { amount, date: new Date().toISOString().split("T")[0] } },
+                $setOnInsert: { userId, date: "global" }
             },
-            { new: true, upsert: true }
+            { returnDocument: 'after', upsert: true }
         );
 
         res.json({ status: "success", data: doc });

@@ -12,7 +12,21 @@ const Dashboard = () => {
   const [sessionCount, setSessionCount] = useState(0);
   const [weather, setWeather] = useState({ temp: '--', desc: 'Initializing...' });
   const [clock, setClock] = useState('');
-  const [tasks, setTasks] = useState([]);
+  const [tasks, setTasks] = useState(() => {
+    try {
+      const saved = localStorage.getItem('tasks');
+      if (!saved) return [];
+      const today = new Date().toDateString();
+      return JSON.parse(saved).filter(t =>
+        t.type !== 'manual' || t.date === today
+      );
+    } catch { return []; }
+  });
+
+  // Persist whenever tasks change
+  useEffect(() => {
+    localStorage.setItem('tasks', JSON.stringify(tasks));
+  }, [tasks]);
   const [taskInput, setTaskInput] = useState('');
   const [scratch, setScratch] = useState('');
   const [isZenMode, setIsZenMode] = useState(false);
@@ -82,10 +96,8 @@ const Dashboard = () => {
 
   const syncTasks = async () => {
     try {
-      // const res = await fetch(`${BASE_URL}/planner`)
       const res = await fetch(`${BASE_URL}/planner`);
       const result = await res.json();
-
       const arr = result.data || result;
 
       const days = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
@@ -100,13 +112,16 @@ const Dashboard = () => {
           type: "synced"
         }));
 
-      setTasks(filtered);
+      // ✅ Keep manual tasks, replace only synced ones
+      setTasks(prev => {
+        const manual = prev.filter(t => t.type === 'manual');
+        return [...filtered, ...manual];
+      });
 
     } catch (err) {
       console.log("Dashboard fetch error:", err);
     }
   };
-
   // 4. Timer Logic
   useEffect(() => {
     if (isActive && timeLeft > 0) {
@@ -164,12 +179,15 @@ const Dashboard = () => {
 
   const handleManualTask = (e) => {
     if (e.key === 'Enter' && taskInput) {
-      setTasks(prev => [...prev, { text: taskInput, type: 'manual' }]);
+      setTasks(prev => [...prev, {
+        text: taskInput,
+        type: 'manual',
+        date: new Date().toDateString() // "Thu Jun 05 2025"
+      }]);
       setTaskInput('');
     }
   };
 
-  // ✅ Scratch save handler
   const handleScratchChange = (e) => {
     const value = e.target.value;
     setScratch(value);
@@ -242,10 +260,11 @@ const Dashboard = () => {
             </span>
           </div>
           <div className="flex items-center gap-10">
-            <Link to="https://github.com" target="_blank" rel="noreferrer" className="dock-item">GitHub</Link>
             <Link to="https://gemini.google.com" target="_blank" rel="noreferrer" className="dock-item">Gemini</Link>
-            <Link to="https://chat.openai.com" target="_blank" rel="noreferrer" className="dock-item">ChatGPT</Link>
+            <Link to="https://github.com" target="_blank" rel="noreferrer" className="dock-item">GitHub</Link>
+            <Link to="https://claude.ai/new" target="_blank" rel="noreferrer" className="dock-item">claude</Link>
             <Link to="https://youtube.com" target="_blank" rel="noreferrer" className="dock-item">YouTube</Link>
+            <Link to="https://chat.openai.com" target="_blank" rel="noreferrer" className="dock-item">ChatGPT</Link>
           </div>
         </div>
       </main>
@@ -295,7 +314,7 @@ const Dashboard = () => {
               value={taskInput}
               onChange={(e) => setTaskInput(e.target.value)}
               onKeyPress={handleManualTask}
-              className="w-full mt-4 py-2 input-clean text-sm font-mono text-[#b3a577]"
+              className="capitalize w-full mt-4 py-2 input-clean text-sm font-mono text-[#b3a577]"
             />
           </div>
 
