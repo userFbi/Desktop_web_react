@@ -23,35 +23,26 @@ exports.getExpense = async (req, res) => {
 exports.addExpense = async (req, res) => {
     try {
         const { description, amount, type } = req.body;
+        const userId = req.user._id;
 
         const now = new Date();
 
         const newEntry = new EXPENSE({
+            userId,
             description,
-            amount,
+            amount: parseFloat(amount),   // ✅ fix: was just `amount` (string)
             type,
-            date: now.toLocaleDateString("en-GB", {
-                day: "2-digit",
-                month: "2-digit",
-            }),
-            monthYear: now.toLocaleDateString("en-GB", {
-                month: "long",
-                year: "numeric",
-            })
+            date: now.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit" }),
+            monthYear: now.toLocaleDateString("en-GB", { month: "long", year: "numeric" })
         });
 
         await newEntry.save();
 
-        res.json({
-            status: "Success",
-            message: "Entry Added"
-        });
+        res.json({ status: "Success", message: "Entry Added" });
 
     } catch (error) {
-        res.status(500).json({
-            status: "Fail",
-            message: error.message
-        });
+        console.log(error.message);   // ✅ add this so you can see the exact crash
+        res.status(500).json({ status: "Fail", message: error.message });
     }
 };
 

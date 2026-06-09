@@ -11,47 +11,38 @@ export default function FiscalTracker() {
   const [search, setSearch] = useState("");
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
-  // Load data
 
+  const getAuthHeaders = () => ({
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${localStorage.getItem("focusToken")}`,
+  });
 
   useEffect(() => {
-    fetch(`${BASE_URL}/expense`)
-      .then(res => res.json())
-      .then(res => {
-        setTransactions(res.data || []); // ✅ fallback to empty array
-      })
-      .catch(err => console.log(err));
+    fetch(`${BASE_URL}/expense`, { headers: getAuthHeaders() })
+      .then((res) => res.json())
+      .then((res) => setTransactions(res.data || []))
+      .catch((err) => console.log(err));
   }, []);
 
-  // Save data
   useEffect(() => {
     localStorage.setItem("tp_transactions", JSON.stringify(transactions));
   }, [transactions]);
 
   const addEntry = async () => {
     if (!desc || !amt) return;
-
     try {
       await fetch(`${BASE_URL}/expense/add`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          description: desc,
-          amount: amt,
-          type: currentType
-        })
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ description: desc, amount: amt, type: currentType }),
       });
 
-      // reload data
-      await fetch(`${BASE_URL}/expense`)
-        .then(res => res.json())
-        .then(res => setTransactions(res.data));
+      await fetch(`${BASE_URL}/expense`, { headers: getAuthHeaders() })
+        .then((res) => res.json())
+        .then((res) => setTransactions(res.data));
 
       setDesc("");
       setAmt("");
-
     } catch (err) {
       console.log(err);
     }
@@ -60,22 +51,29 @@ export default function FiscalTracker() {
   const deleteEntry = async (id) => {
     try {
       const res = await fetch(`${BASE_URL}/expense/delete/${id}`, {
-        method: "DELETE"
+        method: "DELETE",
+        headers: getAuthHeaders(),
       });
-
       if (!res.ok) throw new Error("Delete failed");
-
-      setTransactions(prev => prev.filter(t => t._id !== id));
-
+      setTransactions((prev) => prev.filter((t) => t._id !== id));
     } catch (err) {
       console.log("Delete error:", err);
     }
   };
 
-  const clearLogs = () => {
-    setTransactions([]);
-    localStorage.removeItem("tp_transactions");
-    setShowClearConfirm(false);
+  const clearLogs = async () => {
+    try {
+      await fetch(`${BASE_URL}/expense/clear`, {
+        method: "DELETE",
+        headers: getAuthHeaders(),
+      });
+      setTransactions([]);
+      localStorage.removeItem("tp_transactions");
+    } catch (err) {
+      console.log("Clear error:", err);
+    } finally {
+      setShowClearConfirm(false);
+    }
   };
 
   // Filter
@@ -165,7 +163,7 @@ export default function FiscalTracker() {
             value={desc}
             onChange={(e) => setDesc(e.target.value)}
             placeholder="Description"
-            className="bg-white/5 border border-white/10 p-3 text-xs flex-grow"
+            className="capitalize bg-white/5 border border-white/10 p-3 text-xs flex-grow"
           />
 
           <input
@@ -207,7 +205,7 @@ export default function FiscalTracker() {
       {/* LIST */}
       <div className="overflow-y-auto pr-3 h-[400px]">
         {filtered.map((t) => (
-          <div key={t.id} className="border-b border-white/5 py-4 text-[11px] flex justify-between">
+          <div key={t._id} className="border-b border-white/5 py-4 text-[11px] flex justify-between">
 
             <div className="flex items-center gap-6">
               <span className="text-zinc-500 text-[11px]">{t.date}</span>

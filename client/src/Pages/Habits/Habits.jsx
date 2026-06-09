@@ -20,9 +20,13 @@ export default function HabitEngine() {
   const [deleteHabitId, setDeleteHabitId] = useState(null);
 
   useEffect(() => {
+
+
     fetch(API)
       .then(res => res.json())
       .then(res => {
+
+
         setState(prev => ({
           ...prev,
           habits: res.data
@@ -61,6 +65,7 @@ export default function HabitEngine() {
     if (!input) return;
 
     const newHabit = {
+        // userId: user._id,
       name: input.replace(/\s+/g, "_").toUpperCase(),
       checks: [false, false, false, false, false, false, false]
     };
@@ -72,6 +77,12 @@ export default function HabitEngine() {
     });
 
     const data = await res.json();
+
+    if (!res.ok) {
+      console.error(data);
+      return;
+    }
+
 
     setState(prev => ({
       ...prev,
