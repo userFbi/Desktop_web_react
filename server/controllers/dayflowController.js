@@ -1,9 +1,10 @@
 const DayFlow = require("../models/dayflow");
+DayFlow.find({ userId: "6a20f40d04d595594c7eba50" }).then(d => console.log(d));
 
 // 🔹 GET ALL DATA
 exports.getDayFlow = async (req, res) => {
     try {
-        const userId = req.user.id;
+        const userId = req.user._id;
         const data = await DayFlow.find({ userId }).sort({ createdAt: -1 });
 
         res.json({ status: "success", data });
@@ -15,7 +16,7 @@ exports.getDayFlow = async (req, res) => {
 // 🔹 GET BY DATE
 exports.getByDate = async (req, res) => {
     try {
-        const userId = req.user.id;
+        const userId = req.user._id;
         const { date } = req.params;
 
         let data = await DayFlow.findOne({ userId, date });
@@ -33,7 +34,7 @@ exports.getByDate = async (req, res) => {
 // 🔹 ADD EVENT
 exports.addEvent = async (req, res) => {
     try {
-        const userId = req.user.id;
+        const userId = req.user._id;
         const { date, event } = req.body;
 
         if (!date || !event) {
@@ -59,10 +60,12 @@ exports.addEvent = async (req, res) => {
 // 🔹 DELETE EVENT
 exports.deleteEvent = async (req, res) => {
     try {
-        const userId = req.user.id;
+        const userId = req.user._id;
         const { date, index } = req.params;
 
+        console.log("userId:", userId, "date:", date, "index:", index);
         const doc = await DayFlow.findOne({ userId, date });
+        console.log("doc found:", doc);
 
         if (!doc) return res.status(404).json({ message: "No data found for this date" });
         if (!doc.events[index]) return res.status(400).json({ message: "Invalid index" });
@@ -85,7 +88,7 @@ exports.deleteEvent = async (req, res) => {
 // 🔹 ADD SAVINGS
 exports.addSavings = async (req, res) => {
     try {
-        const userId = req.user.id;
+        const userId = req.user._id;
         const { amount } = req.body;
 
         if (amount === undefined || amount === null) {
@@ -111,7 +114,7 @@ exports.addSavings = async (req, res) => {
 // 🔹 DELETE SAVINGS
 exports.deleteSaving = async (req, res) => {
     try {
-        const userId = req.user.id;
+        const userId = req.user._id;
         const { index } = req.params;
 
         const doc = await DayFlow.findOne({ userId, date: "global" });
@@ -132,7 +135,7 @@ exports.deleteSaving = async (req, res) => {
 // 🔹 ADD REMINDER
 exports.addReminder = async (req, res) => {
     try {
-        const userId = req.user.id;
+        const userId = req.user._id;
         const { text } = req.body;
 
         if (!text) return res.status(400).json({ message: "Reminder text required" });
@@ -156,7 +159,7 @@ exports.addReminder = async (req, res) => {
 // 🔹 DELETE REMINDER
 exports.deleteReminder = async (req, res) => {
     try {
-        const userId = req.user.id;
+        const userId = req.user._id;
         const { index } = req.params;
 
         const doc = await DayFlow.findOne({ userId, date: "global" });
@@ -177,7 +180,7 @@ exports.deleteReminder = async (req, res) => {
 // 🔹 RESET ALL — only delete current user's data
 exports.resetDayFlow = async (req, res) => {
     try {
-        const userId = req.user.id;
+        const userId = req.user._id;
         await DayFlow.deleteMany({ userId });
 
         res.json({ status: "success", message: "All DayFlow data deleted" });

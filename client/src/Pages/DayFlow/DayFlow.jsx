@@ -23,12 +23,13 @@ const DayFlow = () => {
         }
     };
 
-    let flowState = JSON.parse(localStorage.getItem("dayflow_v3")) || {
-        reminders: ["Initial Boot Processed"],
-        savings: [],
-        events: {},
-        selectedDate: new Date().toISOString().split("T")[0],
-    };
+let flowState = JSON.parse(localStorage.getItem("dayflow_v3")) || {
+    reminders: [],
+    savings: [],
+    events: {},
+    selectedDate: new Date().toISOString().split("T")[0],
+};
+
     const stateRef = React.useRef(flowState);
 
     const save = () => {
@@ -38,36 +39,22 @@ const DayFlow = () => {
     };
 
     async function loadFromBackend() {
-        const token = localStorage.getItem('focusToken');
-        console.log("Token at load time:", token);
         try {
-            const today = new Date().toISOString().split("T")[0];
-
-            // ✅ Fetch ALL events at once
-            const res = await fetch(`${BASE_URL}/dayflow`,
-                {
-                    headers: getAuthHeaders()
-                }
-            );
+            const res = await fetch(`${BASE_URL}/dayflow`, { headers: getAuthHeaders() });
             const data = await res.json();
 
-            // data.data is array of all docs from getDayFlow
             if (data.data) {
                 data.data.forEach(doc => {
-                    if (doc.date !== "global") {
+                    if (doc.date === "global") {
+                        flowState.savings = doc.savings || [];
+                        flowState.reminders = doc.reminders || [];
+                    } else {
                         flowState.events[doc.date] = doc.events || [];
                     }
                 });
             }
 
-            // ✅ global = savings + reminders
-            const globalRes = await fetch(`${BASE_URL}/dayflow/global`, {
-                headers: getAuthHeaders()
-            });
-            const globalData = await globalRes.json();
-            flowState.savings = globalData.savings || [];
-            flowState.reminders = globalData.reminders || [];
-
+            const today = new Date().toISOString().split("T")[0];
             save();
             selectDate(today, false);
 
@@ -83,7 +70,9 @@ const DayFlow = () => {
     }
 
     async function deleteTaskFromPopup(index) {
-        const date = flowState.selectedDate; // ✅ now actually used
+        const freshState = JSON.parse(localStorage.getItem("dayflow_v3"));
+        const date = freshState?.selectedDate;
+        if (!date) return console.error("No selected date found");
 
         try {
             const res = await fetch(`${BASE_URL}/dayflow/event/delete/${date}/${index}`, {
@@ -92,6 +81,13 @@ const DayFlow = () => {
             });
 
             if (!res.ok) throw new Error("Delete failed");
+
+            // remove from localStorage too
+            if (freshState.events[date]) {
+                freshState.events[date].splice(index, 1);
+                if (freshState.events[date].length === 0) delete freshState.events[date];
+                localStorage.setItem("dayflow_v3", JSON.stringify(freshState));
+            }
 
             document.querySelector(".fixed.inset-0")?.remove();
             await loadFromBackend();
@@ -459,34 +455,6 @@ ${translation}`;
                 "Unable to load Daily Gita verse.";
         }
     }
-
-    // useEffect(() => {
-    //     window.saveEvent = saveEvent;
-    //     window.editEvent = editEvent;
-    //     window.deleteEvent = deleteEvent;
-    //     window.addSavings = addSavings;
-    //     window.deleteSaving = deleteSaving;
-    //     window.addReminder = addReminder;
-    //     window.deleteReminder = deleteReminder;
-    //     window.deleteTaskFromPopup = deleteTaskFromPopup;
-    //     window.resetGita = resetGita;
-
-    //     const clock = setInterval(() => {
-    //         const el = document.getElementById("live-clock");
-    //         if (el) el.innerText = new Date().toLocaleTimeString("en-US");
-    //     }, 1000);
-
-    //     initCalendar();
-    //     render();
-
-    //     // 🔥 ADD THIS LINE
-    //     loadFromBackend();
-
-    //     loadDailyShloka();
-
-    //     return () => clearInterval(clock);
-    // }, []);
-
 
     useEffect(() => {
         // Re-register every time so functions are never stale
