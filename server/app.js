@@ -22,7 +22,7 @@ const plannerRouter = require('./routes/planner');
 const vaultRoutes = require("./routes/vault");
 const expenseRoutes = require("./routes/expense");
 const habitRoutes = require("./routes/habit");
-const noteRoutes = require("./routes/note");
+const notesRoutes = require("./routes/notes");
 const dayflowRoutes = require("./routes/dayflow");
 const scratchRoutes = require("./routes/scratch");
 
@@ -32,7 +32,7 @@ app.use("/planner", plannerRouter);
 app.use("/vault", vaultRoutes);
 app.use("/expense", expenseRoutes);
 app.use("/habits", habitRoutes);
-app.use("/notes", noteRoutes);
+app.use("/notes", notesRoutes);
 app.use("/dayflow", dayflowRoutes);
 app.use("/scratch", scratchRoutes);
 

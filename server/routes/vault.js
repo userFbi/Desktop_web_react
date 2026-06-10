@@ -1,11 +1,13 @@
 const express = require("express");
 const router = express.Router();
-
 const vault = require("../controllers/vaultController");
+console.log(vault)
+const verifyToken = require("../middleware/auth");
 
-router.get("/", vault.getVault);
-router.post("/add", vault.addVault);
-router.delete("/delete/:id", vault.deleteVault);
-router.patch("/update/:id", vault.updateVault);
+router.get("/", verifyToken, vault.getVault);
+router.post("/add", verifyToken, vault.addVault);
+router.delete("/delete/:id", verifyToken, vault.deleteVault);
+router.patch("/update/:id", verifyToken, vault.updateVault);
 
 module.exports = router;
+

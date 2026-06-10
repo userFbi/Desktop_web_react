@@ -27,14 +27,16 @@ export default function KeyVault() {
 
     const fetchVault = async () => {
         try {
-            const res = await fetch("http://localhost:5000/vault");
+            const token = localStorage.getItem("focusToken"); // fixed
+            const res = await fetch("http://localhost:5000/vault", {
+                headers: { "Authorization": `Bearer ${token}` }
+            });
             const data = await res.json();
-            setVaultData(data);
+            setVaultData(Array.isArray(data) ? data : []);
         } catch (err) {
             console.error(err);
         }
     };
-
 
     const filtered = vaultData.filter(item =>
         item.serviceName.toLowerCase().includes(search.toLowerCase()) ||
@@ -48,14 +50,15 @@ export default function KeyVault() {
 
     const addNewKey = async () => {
         const { serviceName, username, password } = form;
-
         if (!serviceName || !username || !password) return;
 
         try {
+            const token = localStorage.getItem("focusToken");
             await fetch("http://localhost:5000/vault/add", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
                 },
                 body: JSON.stringify(form),
             });
@@ -64,21 +67,21 @@ export default function KeyVault() {
             setShowModal(false);
             fetchVault();
             notify("ENTRY_ADDED");
-
         } catch (err) {
             console.error(err);
         }
     };
 
+
     const deleteKey = async (id) => {
         try {
+            const token = localStorage.getItem("focusToken"); // fixed
             await fetch(`http://localhost:5000/vault/delete/${id}`, {
                 method: "DELETE",
+                headers: { "Authorization": `Bearer ${token}` }
             });
-
             fetchVault();
             notify("ENTRY_REMOVED");
-
         } catch (err) {
             console.error(err);
         }
@@ -208,7 +211,7 @@ export default function KeyVault() {
                             placeholder="Service Name"
                             value={form.serviceName}
                             onChange={(e) => setForm({ ...form, serviceName: e.target.value })}
-                            className="w-full mb-4 bg-[#050505] border border-white/10 p-3 text-xs outline-none focus:border-[#b3a577]"
+                            className="capitalize w-full mb-4 bg-[#050505] border border-white/10 p-3 text-xs outline-none focus:border-[#b3a577]"
                         />
 
                         {/* Username */}
@@ -259,7 +262,7 @@ export default function KeyVault() {
                         </h2>
 
                         <p className="text-xs text-zinc-400 mb-6">
-                           The selected record will be deleted permanently.
+                            The selected record will be deleted permanently.
                         </p>
 
                         <div className="flex justify-end gap-4">

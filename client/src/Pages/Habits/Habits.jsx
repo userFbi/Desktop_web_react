@@ -65,7 +65,7 @@ export default function HabitEngine() {
     if (!input) return;
 
     const newHabit = {
-        // userId: user._id,
+      // userId: user._id,
       name: input.replace(/\s+/g, "_").toUpperCase(),
       checks: [false, false, false, false, false, false, false]
     };

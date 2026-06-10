@@ -16,14 +16,18 @@ export default function NotesPage() {
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    fetch(API)
+    const token = localStorage.getItem("focusToken");
+    fetch(API, {
+      headers: { "Authorization": `Bearer ${token}` }
+    })
       .then(res => res.json())
       .then(res => {
         setState(prev => ({
           ...prev,
-          notes: res.data
+          notes: Array.isArray(res) ? res : Array.isArray(res.data) ? res.data : []
         }));
-      });
+      })
+      .catch(err => console.error(err));
   }, []);
 
   const activeNote = state.notes.find((n) => n._id === state.activeNoteId);
@@ -36,19 +40,20 @@ export default function NotesPage() {
   );
 
   const createNewNote = async () => {
-    const newNote = {
-      title: "",
-      body: "",
-      folder: state.activeFolder
-    };
+    const token = localStorage.getItem("focusToken");
+    const newNote = { title: "", body: "", folder: state.activeFolder };
 
     const res = await fetch(`${API}/add`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
       body: JSON.stringify(newNote)
     });
 
     const data = await res.json();
+    if (!data.data) return console.error("Failed to create note:", data);
 
     setState(prev => ({
       ...prev,
@@ -58,31 +63,32 @@ export default function NotesPage() {
   };
 
   const updateNote = async (field, value) => {
+    const token = localStorage.getItem("focusToken");
     const note = state.notes.find(n => n._id === state.activeNoteId);
-
     const updatedNote = { ...note, [field]: value };
 
-    // UI update instantly
     setState(prev => ({
       ...prev,
-      notes: prev.notes.map(n =>
-        n._id === note._id ? updatedNote : n
-      )
+      notes: prev.notes.map(n => n._id === note._id ? updatedNote : n)
     }));
 
-    // backend update
     await fetch(`${API}/update/${note._id}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      },
       body: JSON.stringify(updatedNote)
     });
   };
 
   const deleteNote = async () => {
     if (!window.confirm("Execute Wipe Protocol?")) return;
+    const token = localStorage.getItem("focusToken");
 
     await fetch(`${API}/delete/${state.activeNoteId}`, {
-      method: "DELETE"
+      method: "DELETE",
+      headers: { "Authorization": `Bearer ${token}` }
     });
 
     setState(prev => ({
@@ -154,10 +160,10 @@ export default function NotesPage() {
                 onClick={() => setState((prev) => ({ ...prev, activeNoteId: n._id }))}
                 className="px-6 md:px-[25px] py-6 md:py-[25px] border-b border-white/5 cursor-pointer hover:bg-white/[0.02]"
               >
-                <span className="block text-[11px] md:text-[12px] font-extrabold uppercase mb-[6px]">
+                <span className="block text-[11px] md:text-[12px] font-extrabold capitalize mb-[6px]">
                   {n.title || "Untitled_Entry"}
                 </span>
-                <span className="block text-[9px] md:text-[10px] text-zinc-600 uppercase truncate">
+                <span className="block text-[9px] md:text-[10px] text-zinc-600  truncate">
                   {n.body || "// Empty_Stream"}
                 </span>
               </div>
@@ -198,7 +204,7 @@ export default function NotesPage() {
                 value={activeNote.title}
                 onChange={(e) => updateNote("title", e.target.value)}
                 placeholder="ENTRY_TITLE"
-                className="bg-transparent border-none outline-none w-full text-white text-xl md:text-2xl font-black uppercase tracking-tight px-6 md:px-[30px] pt-8 md:pt-[40px] pb-4"
+                className="bg-transparent border-none outline-none w-full text-white text-xl md:text-2xl font-black capitalize tracking-tight px-6 md:px-[30px] pt-8 md:pt-[40px] pb-4"
               />
               <div className="h-[1px] mx-6 md:mx-[30px] mb-6 opacity-20 bg-[#b3a577]" />
               <textarea
