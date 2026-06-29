@@ -6,29 +6,33 @@ const DayFlow = () => {
     const BASE_URL = process.env.REACT_APP_API_URL;
 
     const getAuthHeaders = () => {
-        const token = localStorage.getItem('focusToken');
+        const token = localStorage.getItem('focusToken');// ✅ No token at all → redirect immediately
+        if (!token) {
+            window.location.href = '/login';
+            return {};
+        }
 
-        if (token) {
-            const payload = JSON.parse(atob(token.split('.')[1]));
-            if (payload.exp * 1000 < Date.now()) {
-                localStorage.clear();
-                window.location.href = '/login'; // redirect to login
-                return {};
-            }
+        // ✅ Token expired → clear and redirect
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        if (payload.exp * 1000 < Date.now()) {
+            localStorage.clear();
+            window.location.href = '/login';
+            return {};
         }
 
         return {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${token}`
-        }
+        };
     };
+    const stored = JSON.parse(localStorage.getItem("dayflow_v3")) || {};
 
-let flowState = JSON.parse(localStorage.getItem("dayflow_v3")) || {
-    reminders: [],
-    savings: [],
-    events: {},
-    selectedDate: new Date().toISOString().split("T")[0],
-};
+    let flowState = {
+        reminders: Array.isArray(stored.reminders) ? stored.reminders : [],
+        savings: Array.isArray(stored.savings) ? stored.savings : [],
+        events: stored.events && typeof stored.events === "object" ? stored.events : {},
+        selectedDate: stored.selectedDate || new Date().toISOString().split("T")[0],
+    };
 
     const stateRef = React.useRef(flowState);
 
@@ -54,15 +58,15 @@ let flowState = JSON.parse(localStorage.getItem("dayflow_v3")) || {
                 });
             }
 
-            const today = new Date().toISOString().split("T")[0];
+            // ✅ Keep whatever date was selected before, don't reset to today
+            const previouslySelected = flowState.selectedDate;
             save();
-            selectDate(today, false);
+            selectDate(previouslySelected, false); // ← was: selectDate(today, false)
 
         } catch (err) {
             console.error("Load error:", err);
         }
     }
-
     function deleteSingleTask(index) {
         flowState.events[flowState.selectedDate].splice(index, 1);
         save();
@@ -72,6 +76,8 @@ let flowState = JSON.parse(localStorage.getItem("dayflow_v3")) || {
     async function deleteTaskFromPopup(index) {
         const freshState = JSON.parse(localStorage.getItem("dayflow_v3"));
         const date = freshState?.selectedDate;
+        console.log("Deleting:", `${BASE_URL}/dayflow/event/delete/${date}/${index}`);
+
         if (!date) return console.error("No selected date found");
 
         try {
@@ -319,9 +325,8 @@ let flowState = JSON.parse(localStorage.getItem("dayflow_v3")) || {
     }
 
     function render() {
-        document.getElementById("reminder-list").innerHTML = flowState.reminders
-            .map(
-                (r, i) => `
+        document.getElementById("reminder-list").innerHTML = flowState.reminders.map(
+            (r, i) => `
         <div class="flex justify-between items-center bg-[#050505] text-zinc-400 capitalize p-3 border border-white/5 text-[12px]">
             <span>${r}</span>
 
@@ -333,9 +338,8 @@ let flowState = JSON.parse(localStorage.getItem("dayflow_v3")) || {
             </span>
         </div>
         `
-            )
+        )
             .join("");
-
         let total = flowState.savings.reduce((acc, curr) => acc + curr.amount, 0);
 
         document.getElementById("total-savings").innerText =

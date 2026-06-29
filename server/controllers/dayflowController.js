@@ -1,5 +1,4 @@
 const DayFlow = require("../models/dayflow");
-DayFlow.find({ userId: "6a20f40d04d595594c7eba50" }).then(d => console.log(d));
 
 // 🔹 GET ALL DATA
 exports.getDayFlow = async (req, res) => {
@@ -63,9 +62,9 @@ exports.deleteEvent = async (req, res) => {
         const userId = req.user._id;
         const { date, index } = req.params;
 
-        console.log("userId:", userId, "date:", date, "index:", index);
+        
         const doc = await DayFlow.findOne({ userId, date });
-        console.log("doc found:", doc);
+        
 
         if (!doc) return res.status(404).json({ message: "No data found for this date" });
         if (!doc.events[index]) return res.status(400).json({ message: "Invalid index" });

@@ -3,7 +3,7 @@ const HABIT = require("../models/habit");
 // GET all habits
 exports.getHabits = async (req, res) => {
     try {
-        const habits = await HABIT.find().sort({ createdAt: -1 });
+        const habits = await HABIT.find({ userId: req.user._id }).sort({ createdAt: -1 }); // ← scoped
 
         res.status(200).json({
             status: "success",
@@ -11,10 +11,7 @@ exports.getHabits = async (req, res) => {
         });
 
     } catch (error) {
-        res.status(500).json({
-            status: "fail",
-            message: error.message
-        });
+        res.status(500).json({ status: "fail", message: error.message });
     }
 };
 
@@ -22,7 +19,7 @@ exports.getHabits = async (req, res) => {
 // ADD habit
 exports.addHabit = async (req, res) => {
     try {
-        const habit = await HABIT.create(req.body);
+        const habit = await HABIT.create({ ...req.body, userId: req.user._id }); // ← create, not find
 
         res.status(201).json({
             status: "success",
@@ -30,10 +27,7 @@ exports.addHabit = async (req, res) => {
         });
 
     } catch (error) {
-        res.status(500).json({
-            status: "fail",
-            message: error.message
-        });
+        res.status(500).json({ status: "fail", message: error.message });
     }
 };
 
@@ -82,7 +76,7 @@ exports.deleteHabit = async (req, res) => {
 // DELETE ALL habits
 exports.deleteAllHabits = async (req, res) => {
     try {
-        await HABIT.deleteMany({});
+        await HABIT.deleteMany({ userId: req.user._id });
 
         res.status(200).json({
             status: "success",

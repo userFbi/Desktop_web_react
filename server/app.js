@@ -5,7 +5,7 @@ const cors = require("cors");
 const cookieParser = require('cookie-parser');
 const app = express();
 
-// ── Middleware (FIRST) ─────────────────────────
+// ── Middleware ─────────────────────────
 app.use(cors({ origin: 'http://localhost:3000', credentials: true }));
 app.use(express.json());
 app.use(cookieParser());
@@ -17,7 +17,7 @@ mongoose.connect("mongodb://localhost:27017/Tp")
 
 // ── Routes (AFTER middleware) ──────────────────
 const usersRouter = require('./routes/users');
-const authRouter = require('./routes/auth');      // ← moved up
+const authRouter = require('./routes/auth');      
 const plannerRouter = require('./routes/planner');
 const vaultRoutes = require("./routes/vault");
 const expenseRoutes = require("./routes/expense");
@@ -27,7 +27,7 @@ const dayflowRoutes = require("./routes/dayflow");
 const scratchRoutes = require("./routes/scratch");
 
 app.use('/users', usersRouter);
-app.use('/api/auth', authRouter);   // ← now works because authRouter is defined above
+app.use('/api/auth', authRouter);  
 app.use("/planner", plannerRouter);
 app.use("/vault", vaultRoutes);
 app.use("/expense", expenseRoutes);

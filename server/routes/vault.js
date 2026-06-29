@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const vault = require("../controllers/vaultController");
-console.log(vault)
+
 const verifyToken = require("../middleware/auth");
 
 router.get("/", verifyToken, vault.getVault);

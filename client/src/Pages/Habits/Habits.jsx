@@ -1,8 +1,25 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-const API = "http://localhost:5000/habits";
 
 export default function HabitEngine() {
+
+  const BASE_URL = `${process.env.REACT_APP_API_URL}/habits`;
+
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('focusToken');
+    if (!token) { window.location.href = '/login'; return {}; }
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    if (payload.exp * 1000 < Date.now()) {
+      localStorage.clear();
+      window.location.href = '/login';
+      return {};
+    }
+    return {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`
+    };
+  };
+
   const getWeekNumber = (d) => {
     d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
     d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
@@ -18,15 +35,12 @@ export default function HabitEngine() {
 
   const [input, setInput] = useState("");
   const [deleteHabitId, setDeleteHabitId] = useState(null);
+  const [confirmClearAll, setConfirmClearAll] = useState(false);
 
   useEffect(() => {
-
-
-    fetch(API)
+    fetch(BASE_URL, { headers: getAuthHeaders() })
       .then(res => res.json())
       .then(res => {
-
-
         setState(prev => ({
           ...prev,
           habits: res.data
@@ -65,14 +79,13 @@ export default function HabitEngine() {
     if (!input) return;
 
     const newHabit = {
-      // userId: user._id,
       name: input.replace(/\s+/g, "_").toUpperCase(),
       checks: [false, false, false, false, false, false, false]
     };
 
-    const res = await fetch(API, {
+    const res = await fetch(BASE_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: getAuthHeaders(),
       body: JSON.stringify(newHabit)
     });
 
@@ -82,7 +95,6 @@ export default function HabitEngine() {
       console.error(data);
       return;
     }
-
 
     setState(prev => ({
       ...prev,
@@ -99,9 +111,9 @@ export default function HabitEngine() {
       i === index ? !c : c
     );
 
-    const res = await fetch(`${API}/${id}`, {
+    const res = await fetch(`${BASE_URL}/${id}`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: getAuthHeaders(),
       body: JSON.stringify({ ...habit, checks: updatedChecks })
     });
 
@@ -116,8 +128,9 @@ export default function HabitEngine() {
   };
 
   const deleteHabit = async (id) => {
-    await fetch(`${API}/${id}`, {
-      method: "DELETE"
+    await fetch(`${BASE_URL}/${id}`, {
+      method: "DELETE",
+      headers: getAuthHeaders()
     });
 
     setState(prev => ({
@@ -128,19 +141,17 @@ export default function HabitEngine() {
     setDeleteHabitId(null);
   };
 
-  const [confirmClearAll, setConfirmClearAll] = useState(false);
-
   const clearAll = () => {
     setConfirmClearAll(true);
-
     setTimeout(() => {
       setConfirmClearAll(false);
     }, 3000);
   };
 
   const confirmClearAllAction = async () => {
-    await fetch("http://localhost:5000/habits/all", {
-      method: "DELETE"
+    await fetch(`${BASE_URL}/all`, {
+      method: "DELETE",
+      headers: getAuthHeaders()
     });
 
     setState({
@@ -182,7 +193,6 @@ export default function HabitEngine() {
           placeholder="Initiate_New_Protocol..."
           className="bg-transparent px-4 py-2 text-[#b3a577] text-[10px] outline-none w-[180px] capitalize"
         />
-
         <button
           onClick={addHabit}
           className="bg-[#b3a577] text-black text-[9px] font-extrabold px-4 uppercase"
@@ -223,8 +233,7 @@ export default function HabitEngine() {
                 className="border-r border-b border-[#151515] flex items-center justify-center h-[65px] cursor-pointer active:bg-[#111]"
               >
                 <span
-                  className={`text-sm ${checked ? "text-[#b3a577]" : "text-[#222] opacity-30"
-                    }`}
+                  className={`text-sm ${checked ? "text-[#b3a577]" : "text-[#222] opacity-30"}`}
                 >
                   {checked ? "✔" : "✖"}
                 </span>
@@ -242,13 +251,10 @@ export default function HabitEngine() {
 
         {state.habits.map(habit => {
           const past = state.history[habit.name] || [];
-          const current =
-            (habit.checks.filter(c => c).length / 7) * 100;
-
+          const current = (habit.checks.filter(c => c).length / 7) * 100;
           const avg =
             past.length > 0
-              ? (past.reduce((a, b) => a + b, 0) + current) /
-              (past.length + 1)
+              ? (past.reduce((a, b) => a + b, 0) + current) / (past.length + 1)
               : current;
 
           return (
@@ -257,7 +263,6 @@ export default function HabitEngine() {
                 <span>{habit.name}</span>
                 <span>Avg_Consistency: {Math.round(avg)}%</span>
               </div>
-
               <div className="w-full h-[4px] bg-[#111]">
                 <div
                   className="h-full bg-[#b3a577] transition-all duration-700"
@@ -279,19 +284,16 @@ export default function HabitEngine() {
         </button>
       </div>
 
+      {/* Delete single habit confirmation */}
       {deleteHabitId && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-
           <div className="bg-[#0d0d0d] border border-red-900 p-6 w-[90%] max-w-sm text-center">
-
             <h2 className="text-sm font-bold uppercase tracking-widest text-red-500 mb-4">
               Confirm Deletion
             </h2>
-
             <p className="text-xs text-zinc-400 mb-6">
               Habit will be removed from tracking system.
             </p>
-
             <div className="flex justify-center gap-4">
               <button
                 onClick={() => setDeleteHabitId(null)}
@@ -299,7 +301,6 @@ export default function HabitEngine() {
               >
                 Cancel
               </button>
-
               <button
                 onClick={() => deleteHabit(deleteHabitId)}
                 className="bg-red-600 text-white px-5 py-2 text-xs font-bold uppercase tracking-widest hover:bg-red-500"
@@ -307,23 +308,20 @@ export default function HabitEngine() {
                 Delete
               </button>
             </div>
-
           </div>
         </div>
       )}
+
+      {/* Clear all confirmation */}
       {confirmClearAll && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-
           <div className="bg-[#0d0d0d] border border-red-900 p-6 w-[90%] max-w-sm text-center">
-
             <h2 className="text-sm font-bold uppercase tracking-widest text-red-500 mb-4">
               Confirm Deletion
             </h2>
-
             <p className="text-xs text-zinc-400 mb-6">
               All habits and history will be cleared.
             </p>
-
             <div className="flex justify-center gap-4">
               <button
                 onClick={() => setConfirmClearAll(false)}
@@ -331,7 +329,6 @@ export default function HabitEngine() {
               >
                 Cancel
               </button>
-
               <button
                 onClick={confirmClearAllAction}
                 className="bg-red-600 text-white px-5 py-2 text-xs font-bold uppercase tracking-widest hover:bg-red-500"
@@ -339,41 +336,9 @@ export default function HabitEngine() {
                 Delete
               </button>
             </div>
-
           </div>
         </div>
       )}
-
-      {/* {confirmClearAll && (
-  <div className="fixed bottom-6 right-6 bg-[#111] border border-red-900 text-white p-4 rounded-lg shadow-lg z-50 flex items-center gap-4">
-    
-    <div>
-      <p className="text-xs text-red-400 font-bold uppercase tracking-widest">
-        Total Reset?
-      </p>
-      <p className="text-[10px] text-zinc-400">
-        All habits and history will be cleared.
-      </p>
-    </div>
-
-    <div className="flex gap-2">
-      <button
-        onClick={() => setConfirmClearAll(false)}
-        className="px-3 py-1 text-xs text-zinc-400 hover:text-white"
-      >
-        Cancel
-      </button>
-
-      <button
-        onClick={confirmClearAllAction}
-        className="px-3 py-1 text-xs bg-red-600 hover:bg-red-500 text-white font-bold uppercase"
-      >
-        Confirm
-      </button>
-    </div>
-  </div>
-)} */}
-
     </div>
   );
 }
