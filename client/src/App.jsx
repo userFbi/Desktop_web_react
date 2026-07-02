@@ -9,6 +9,7 @@ import Dashboard from './components/Dashobard/Dashoboard';
 import DayFlow from './Pages/DayFlow/DayFlow';
 import Expenses from './Pages/Expenses/Expenses';
 import AuthPage from './Pages/Auth/AuthPage';
+import SettingsPage from './Pages/Settings/SettingsPage';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('focusToken'));
@@ -35,6 +36,7 @@ function App() {
         <Route path="/planner" element={isAuthenticated ? <TacticalPlanner /> : <Navigate to="/login" />} />
         <Route path="/notes" element={isAuthenticated ? <NotesPage /> : <Navigate to="/login" />} />
         <Route path="/habits" element={isAuthenticated ? <HabitEngine /> : <Navigate to="/login" />} />
+        <Route path="/settings" element={isAuthenticated ? <SettingsPage/> : <Navigate to="/login" />} />
 
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>

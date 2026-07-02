@@ -88,6 +88,29 @@ body {
     border-radius: 50%;
 }
 
+#reminder-list {
+    max-height: 280px;
+    overflow-y: auto;
+}
+
+.btn-clear-all {
+    background: transparent;
+    border: 1px solid #7a2d2d;
+    color: #c94f4f;
+    font-size: 9px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 3px 8px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.btn-clear-all:hover {
+    background: #7a2d2d;
+    color: #fff;
+}
+
 input {
     background: #050505;
     border: 1px solid var(--border);

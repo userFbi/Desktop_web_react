@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Trash2, Copy, Eye } from "lucide-react";
+import { Trash2, Copy, Eye, Pencil } from "lucide-react";
 import { Link } from "react-router-dom";
 import "./Vault.css";
 
@@ -12,6 +12,7 @@ export default function KeyVault() {
     });
 
     const [deleteId, setDeleteId] = useState(null);
+    const [editId, setEditId] = useState(null); // null = adding, set = editing that entry
 
 
 
@@ -48,25 +49,61 @@ export default function KeyVault() {
         setTimeout(() => setStatus("// Terminal_Ready //"), 2000);
     };
 
-    const addNewKey = async () => {
+    const openAddModal = () => {
+        setEditId(null);
+        setForm({ serviceName: "", username: "", password: "" });
+        setShowModal(true);
+    };
+
+    const openEditModal = (item) => {
+        setEditId(item._id);
+        setForm({
+            serviceName: item.serviceName,
+            username: item.username,
+            password: item.password
+        });
+        setShowModal(true);
+    };
+
+    const closeModal = () => {
+        setShowModal(false);
+        setEditId(null);
+        setForm({ serviceName: "", username: "", password: "" });
+    };
+
+    const saveKey = async () => {
         const { serviceName, username, password } = form;
         if (!serviceName || !username || !password) return;
 
         try {
             const token = localStorage.getItem("focusToken");
-            await fetch("http://localhost:5000/vault/add", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}`
-                },
-                body: JSON.stringify(form),
-            });
 
-            setForm({ serviceName: "", username: "", password: "" });
-            setShowModal(false);
+            if (editId) {
+                // EDIT existing entry
+                await fetch(`http://localhost:5000/vault/update/${editId}`, {
+                    method: "PATCH",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${token}`
+                    },
+                    body: JSON.stringify(form),
+                });
+                notify("ENTRY_UPDATED");
+            } else {
+                // ADD new entry
+                await fetch("http://localhost:5000/vault/add", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${token}`
+                    },
+                    body: JSON.stringify(form),
+                });
+                notify("ENTRY_ADDED");
+            }
+
+            closeModal();
             fetchVault();
-            notify("ENTRY_ADDED");
         } catch (err) {
             console.error(err);
         }
@@ -125,7 +162,7 @@ export default function KeyVault() {
                     />
 
                     <button
-                        onClick={() => setShowModal(true)}
+                        onClick={openAddModal}
                         className="bg-[#b3a577] text-black px-6 py-3 text-[10px] font-black tracking-widest uppercase hover:bg-white transition-all w-full sm:w-auto"
                     >
                         + New_Entry
@@ -144,9 +181,14 @@ export default function KeyVault() {
                                     {item.serviceName}
                                 </h2>
                             </div>
-                            <button onClick={() => setDeleteId(item._id)} className="text-zinc-800 hover:text-red-500 flex-shrink-0">
-                                <Trash2 className="w-4 h-4" />
-                            </button>
+                            <div className="flex gap-3 flex-shrink-0">
+                                <button onClick={() => openEditModal(item)} className="text-zinc-800 hover:text-[#b3a577]">
+                                    <Pencil className="w-4 h-4" />
+                                </button>
+                                <button onClick={() => setDeleteId(item._id)} className="text-zinc-800 hover:text-red-500">
+                                    <Trash2 className="w-4 h-4" />
+                                </button>
+                            </div>
                         </div>
 
                         <div className="space-y-4">
@@ -203,12 +245,13 @@ export default function KeyVault() {
                     <div className="bg-[#0d0d0d] border border-[#151515] p-8 w-[90%] max-w-md">
 
                         <h2 className="text-lg font-bold mb-6 tracking-widest uppercase text-[#b3a577]">
-                            New Entry
+                            {editId ? "Edit Entry" : "New Entry"}
                         </h2>
 
                         {/* Service */}
                         <input
                             placeholder="Service Name"
+                            autoFocus
                             value={form.serviceName}
                             onChange={(e) => setForm({ ...form, serviceName: e.target.value })}
                             className="capitalize w-full mb-4 bg-[#050505] border border-white/10 p-3 text-xs outline-none focus:border-[#b3a577]"
@@ -234,17 +277,17 @@ export default function KeyVault() {
                         {/* Buttons */}
                         <div className="flex justify-end gap-4">
                             <button
-                                onClick={() => setShowModal(false)}
+                                onClick={closeModal}
                                 className="px-4 py-2 text-xs uppercase text-zinc-500 hover:text-white"
                             >
                                 Cancel
                             </button>
 
                             <button
-                                onClick={addNewKey}
+                                onClick={saveKey}
                                 className="bg-[#b3a577] text-black px-6 py-2 text-xs font-bold uppercase tracking-widest hover:bg-white"
                             >
-                                Save
+                                {editId ? "Update" : "Save"}
                             </button>
                         </div>
 

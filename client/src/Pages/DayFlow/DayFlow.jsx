@@ -1,5 +1,6 @@
-import { RotateCcw } from "lucide-react";
 import React, { useEffect } from "react";
+import { RotateCcw } from "lucide-react";
+import { Link } from "react-router-dom";
 import "./DayFlow.css";
 
 const DayFlow = () => {
@@ -47,6 +48,12 @@ const DayFlow = () => {
             const res = await fetch(`${BASE_URL}/dayflow`, { headers: getAuthHeaders() });
             const data = await res.json();
 
+            // reset to backend truth first — otherwise a date whose last event
+            // was deleted (backend removes the whole doc) never clears locally
+            flowState.events = {};
+            flowState.savings = [];
+            flowState.reminders = [];
+
             if (data.data) {
                 data.data.forEach(doc => {
                     if (doc.date === "global") {
@@ -73,9 +80,8 @@ const DayFlow = () => {
         selectDate(flowState.selectedDate);
     }
 
-    async function deleteTaskFromPopup(index) {
+    async function deleteTaskFromPopup(date, index) {
         const freshState = JSON.parse(localStorage.getItem("dayflow_v3"));
-        const date = freshState?.selectedDate;
         console.log("Deleting:", `${BASE_URL}/dayflow/event/delete/${date}/${index}`);
 
         if (!date) return console.error("No selected date found");
@@ -86,7 +92,9 @@ const DayFlow = () => {
                 headers: getAuthHeaders()
             });
 
-            if (!res.ok) throw new Error("Delete failed");
+            // 404 = server already has no such record — treat as already deleted,
+            // don't leave a ghost task stuck forever in the local cache
+            if (!res.ok && res.status !== 404) throw new Error("Delete failed");
 
             // remove from localStorage too
             if (freshState.events[date]) {
@@ -97,6 +105,7 @@ const DayFlow = () => {
 
             document.querySelector(".fixed.inset-0")?.remove();
             await loadFromBackend();
+            resetHighlightToToday(); // ← gold border shouldn't stick to the deleted-from date
         } catch (err) {
             console.error("Delete error:", err);
         }
@@ -161,13 +170,24 @@ const DayFlow = () => {
 
         // ✅ Only show popup when allowed
         if (showPopup && event.length > 0) {
-            showTaskPopup(event);
+            showTaskPopup(event, dateKey);
         }
 
         initCalendar();
     }
 
-    function showTaskPopup(tasks) {
+    // ✅ Snap the calendar's gold-border highlight back to today
+    // (used after add/delete actions so it doesn't stay stuck on whatever
+    // date you just interacted with)
+    function resetHighlightToToday() {
+        const todayKey = new Date().toISOString().split("T")[0];
+        flowState.selectedDate = todayKey;
+        document.getElementById("active-date-label").innerText = todayKey;
+        save();
+        initCalendar();
+    }
+
+    function showTaskPopup(tasks, date) {
         const overlay = document.createElement("div");
 
         overlay.className = `
@@ -185,7 +205,7 @@ const DayFlow = () => {
                     <div class="flex justify-between items-center bg-[#050505] border border-[#151515] px-3 py-2 text-[12px] text-[#b3a577]">
                         <span>${t}</span>
                         <span 
-                            onclick="deleteTaskFromPopup(${index})"
+                            onclick="deleteTaskFromPopup('${date}', ${index})"
                             class="text-red-500 cursor-pointer hover:text-red-300 font-bold"
                         >
                             ×
@@ -228,30 +248,27 @@ const DayFlow = () => {
 
         const date = flowState.selectedDate; // ✅ already correct
 
-        await fetch(`${BASE_URL}/dayflow/event/add`, {
-            method: "POST",
-            headers: getAuthHeaders(),
-            body: JSON.stringify({ date, event: input.value }),
-        });
+        try {
+            const res = await fetch(`${BASE_URL}/dayflow/event/add`, {
+                method: "POST",
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ date, event: input.value }),
+            });
 
-        input.value = "";
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.message || "Failed to save task");
+            }
 
-        // ✅ After saving, reload AND show popup for that date
-        await loadFromBackend();
-        selectDate(date, true); // ← force show popup so you see the new task
-    }
+            input.value = "";
 
-    function editEvent() {
-        document.getElementById("event-input").value =
-            flowState.events[flowState.selectedDate];
-        document.getElementById("event-input").focus();
-    }
-
-    function deleteEvent() {
-        if (window.confirm("Confirm Removal?")) {
-            delete flowState.events[flowState.selectedDate];
-            save();
-            selectDate(flowState.selectedDate);
+            // ✅ After saving, reload AND show popup for that date
+            await loadFromBackend();
+            selectDate(date, true); // ← force show popup so you see the new task
+            resetHighlightToToday(); // ← gold border shouldn't stick to the added-to date
+        } catch (err) {
+            console.error("Save event error:", err);
+            alert(`Couldn't save task: ${err.message}`);
         }
     }
 
@@ -463,8 +480,6 @@ ${translation}`;
     useEffect(() => {
         // Re-register every time so functions are never stale
         window.saveEvent = saveEvent;
-        window.editEvent = editEvent;
-        window.deleteEvent = deleteEvent;
         window.addSavings = addSavings;
         window.withdrawSavings = withdrawSavings;
         window.deleteSaving = deleteSaving;
@@ -492,12 +507,13 @@ ${translation}`;
         <>
             <header className="flex justify-between items-end max-w-[1200px] p-10 mx-auto mb-8">
                 <div>
-                    <a
-                        href="/index.html"
-                        className="text-[9px] text-[#b3a577] tracking-[0.4em] uppercase opacity-40 hover:opacity-100 transition"
+                   
+                      <Link
+                        to="/"
+                        className="text-[9px] text-[#b3a577] tracking-[0.4em] uppercase block opacity-100 hover:opacity-100"
                     >
-                        &lt;&lt; Return
-                    </a>
+                        {"<< Return_to_Core"}
+                    </Link>
                     <h1 className="text-xl font-black uppercase tracking-tighter mt-2">
                         DailyFlow / Protocol
                     </h1>
@@ -537,23 +553,6 @@ ${translation}`;
                             >   System_Idle...</span>
 
 
-                            <div
-                                id="event-actions"
-                                className="hidden flex gap-3 text-[9px] font-bold"
-                            >
-                                <span
-                                    className="cursor-pointer text-[#b3a577]"
-                                    onClick={editEvent}
-                                >
-                                    [EDIT]
-                                </span>
-                                <span
-                                    className="cursor-pointer text-red-900"
-                                    onClick={deleteEvent}
-                                >
-                                    [DELETE]
-                                </span>
-                            </div>
                         </div>
 
                         <div className="flex gap-2">
@@ -663,5 +662,3 @@ ${translation}`;
 };
 
 export default DayFlow;
-
-

@@ -221,7 +221,7 @@ const Dashboard = () => {
               <Link to="/expenses" className="nav-link text-white">Expenses</Link>
               <Link to="/notes" className="nav-link text-white">Notes</Link>
               <Link to="/habits" className="nav-link text-white">Habits</Link>
-              <span className="text-[8px] text-zinc-800 font-mono tracking-widest">// SECURE_SESSION</span>
+              <Link to="/settings" className="nav-link text-white">Settings</Link>
             </div>
           </div>
         </div>

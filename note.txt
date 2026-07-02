@@ -1,3 +1,0 @@
-vault : 
--add edit button to edit details (like username or password or title)
-
