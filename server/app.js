@@ -1,4 +1,8 @@
+const dns = require('dns');
+dns.setServers(['8.8.8.8', '1.1.1.1']);
+
 require("dotenv").config();
+
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require("cors");
@@ -6,18 +10,21 @@ const cookieParser = require('cookie-parser');
 const app = express();
 
 // ── Middleware ─────────────────────────
-app.use(cors({ origin: 'http://localhost:3000', credentials: true }));
+app.use(cors({
+  origin: "*",
+  credentials: false
+}));
 app.use(express.json());
 app.use(cookieParser());
 
 // ── DB ────────────────────────────────────────
-mongoose.connect("mongodb://localhost:27017/Tp")
-  .then(() => console.log('DB CONNECTED ✅'))
+const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/Tp";
+mongoose.connect(MONGO_URI)
+  .then(() => console.log(`DB CONNECTED ✅ (${MONGO_URI.startsWith("mongodb+srv") ? "Atlas" : "Local"})`))
   .catch(err => console.log(err));
 
 // ── Routes (AFTER middleware) ──────────────────
-const usersRouter = require('./routes/users');
-const authRouter = require('./routes/auth');      
+const authRouter = require('./routes/auth');
 const plannerRouter = require('./routes/planner');
 const vaultRoutes = require("./routes/vault");
 const expenseRoutes = require("./routes/expense");
@@ -26,8 +33,7 @@ const notesRoutes = require("./routes/notes");
 const dayflowRoutes = require("./routes/dayflow");
 const scratchRoutes = require("./routes/scratch");
 
-app.use('/users', usersRouter);
-app.use('/api/auth', authRouter);  
+app.use('/api/auth', authRouter);
 app.use("/planner", plannerRouter);
 app.use("/vault", vaultRoutes);
 app.use("/expense", expenseRoutes);
