@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import "./Notes.css";
 
-const API = "http://localhost:5000/notes";
+const BASE_URL = process.env.REACT_APP_API_URL;
 
 // Folder → icon mapping. Each folder gets an icon that matches what it
 // actually holds, so the rail reads as a legend, not decoration.

@@ -4,6 +4,8 @@ import { Link } from "react-router-dom";
 import "./Vault.css";
 
 export default function KeyVault() {
+
+    const BASE_URL = process.env.REACT_APP_API_URL;
     const [showModal, setShowModal] = useState(false);
     const [form, setForm] = useState({
         serviceName: "",
@@ -29,7 +31,7 @@ export default function KeyVault() {
     const fetchVault = async () => {
         try {
             const token = localStorage.getItem("focusToken"); // fixed
-            const res = await fetch("http://localhost:5000/vault", {
+            const res = await fetch(`${BASE_URL}/vault`, {
                 headers: { "Authorization": `Bearer ${token}` }
             });
             const data = await res.json();
@@ -80,7 +82,7 @@ export default function KeyVault() {
 
             if (editId) {
                 // EDIT existing entry
-                await fetch(`http://localhost:5000/vault/update/${editId}`, {
+                await fetch(`${BASE_URL}/vault/update/${editId}`, {
                     method: "PATCH",
                     headers: {
                         "Content-Type": "application/json",
@@ -91,7 +93,7 @@ export default function KeyVault() {
                 notify("ENTRY_UPDATED");
             } else {
                 // ADD new entry
-                await fetch("http://localhost:5000/vault/add", {
+                await fetch(`${BASE_URL}/vault/add`, {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
@@ -113,7 +115,7 @@ export default function KeyVault() {
     const deleteKey = async (id) => {
         try {
             const token = localStorage.getItem("focusToken"); // fixed
-            await fetch(`http://localhost:5000/vault/delete/${id}`, {
+            await fetch(`${BASE_URL}/vault/delete/${id}`, {
                 method: "DELETE",
                 headers: { "Authorization": `Bearer ${token}` }
             });

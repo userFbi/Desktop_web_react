@@ -6,6 +6,8 @@ export default function TacticalPlanner() {
   // Focus on productive hours by default (08:00 to 22:00)
   const [isFullView, setIsFullView] = useState(false);
 
+  const BASE_URL = process.env.REACT_APP_API_URL;
+
   const allHours = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, "0") + ":00");
   const filteredHours = isFullView ? allHours : allHours.slice(7, 23); // 7 AM to 10 PM
 
@@ -14,7 +16,7 @@ export default function TacticalPlanner() {
   const currentHour = new Date().getHours();
 
   useEffect(() => {
-    fetch("http://localhost:5000/planner")
+    fetch(`${BASE_URL}/planner`)
       .then(res => res.json())
       .then(data => {
 
@@ -41,7 +43,8 @@ export default function TacticalPlanner() {
 
     // 🔴 DELETE when empty
     if (!value || value.trim() === "") {
-      fetch(`http://localhost:5000/planner/delete/${day}/${hour}`, {
+      fetch(`${BASE_URL}/planner/delete/${day}/${hour}`, {
+
         method: "DELETE",
       })
         .then(() => {
@@ -57,7 +60,7 @@ export default function TacticalPlanner() {
     }
 
     // 🟢 SAVE
-    fetch("http://localhost:5000/planner/add", {
+    fetch(`${BASE_URL}/planner/add`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -100,7 +103,7 @@ export default function TacticalPlanner() {
             onClick={async () => {
               if (window.confirm("Confirm System Wipe?")) {
                 try {
-                  await fetch("http://localhost:5000/planner/delete", {
+                  await fetch(`${BASE_URL}/planner/delete`, {
                     method: "DELETE"
                   });
 
