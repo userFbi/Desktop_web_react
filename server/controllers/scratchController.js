@@ -1,4 +1,4 @@
-const Scratch = require("../models/Scratch");
+const Scratch = require("../models/scratch");
 
 // 🔹 GET scratchpad
 exports.getScratch = async (req, res) => {
