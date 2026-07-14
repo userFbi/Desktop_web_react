@@ -25,7 +25,7 @@ const AuthPage = ({ onLoginSuccess }) => {
             : { identifier: formData.identifier, password: formData.password };
 
         try {
-            const { data } = await axios.post(`http://localhost:5000${endpoint}`, payload);
+           const { data } = await axios.post(`${process.env.REACT_APP_API_URL}${endpoint}`, payload);
 
             if (!isSignup) {
                 localStorage.setItem('focusToken', data.token);
