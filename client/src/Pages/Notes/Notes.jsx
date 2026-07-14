@@ -12,6 +12,7 @@ import {
 import "./Notes.css";
 
 const BASE_URL = process.env.REACT_APP_API_URL;
+const API = `${BASE_URL}/notes`
 
 // Folder → icon mapping. Each folder gets an icon that matches what it
 // actually holds, so the rail reads as a legend, not decoration.
